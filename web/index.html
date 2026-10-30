@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuditOps</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235B4FE9'/%3E%3Cpath d='M10 16.5l4 4 8-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F6F8FB;
+      --surface: #FFFFFF;
+      --ink: #0B2545;
+      --ink-2: #425466;
+      --muted: #617085;
+      --line: #E3E8EF;
+      --accent: #5B4FE9;
+      --accent-hover: #4A3FD6;
+      --accent-soft: #EEECFD;
+      --risk: #C0362C;
+      --risk-soft: #FDEDEC;
+      --warn: #9C6300;
+      --amber: #B58126;
+      --field: #8592A6;
+      --warn-soft: #FDF3E1;
+      --ok: #1F7A50;
+      --ok-soft: #E6F4EC;
+      --radius: 12px;
+      --shadow-sm: 0 1px 2px rgba(11, 37, 69, .06), 0 1px 1px rgba(11, 37, 69, .04);
+      --shadow-md: 0 12px 32px -12px rgba(11, 37, 69, .18), 0 2px 6px rgba(11, 37, 69, .05);
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Geist", system-ui, sans-serif;
+      font-feature-settings: "tnum" 1;
+    }
+    .serif { font-family: "Source Serif 4", Georgia, serif; }
+    .tabular { font-variant-numeric: tabular-nums; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+    ::placeholder { color: var(--muted); opacity: 1; }
+    label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .frame { max-width: 1232px; margin: 0 auto; position: relative; }
+
+    /* Cabeçalho */
+    .nav-link { color: var(--ink); font-size: 15px; font-weight: 500; padding: 8px 12px; border-radius: 8px; transition: color .15s; background: none; border: 0; cursor: pointer; }
+    .nav-link:hover { color: var(--accent); }
+    .nav-link[aria-current="page"] { color: var(--accent); }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: background .15s, color .15s, border-color .15s, transform .15s; border: 1px solid transparent; white-space: nowrap; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost { background: var(--surface); color: var(--accent); border-color: var(--line); }
+    .btn-ghost:hover { border-color: #C9CFF7; }
+    .btn svg { width: 16px; height: 16px; }
+
+    /* Faixa animada do hero */
+    #ribbon { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+    /* Título em dois tons */
+    .display { font-weight: 500; letter-spacing: -0.02em; line-height: 1.08; }
+    .display .quiet { color: #5C7290; }
+
+    /* Indicadores */
+    .stat { padding: 28px 24px; border-left: 1px solid var(--line); }
+    .stat:first-child { border-left: 0; }
+
+    /* Controle segmentado de filtros */
+    .seg { display: inline-flex; max-width: 100%; overflow-x: auto; scrollbar-width: none; align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
+    .seg::-webkit-scrollbar { display: none; }
+    .seg button { font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); padding: 7px 12px; border-radius: 7px; border: 0; background: none; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; flex-shrink: 0; }
+    .seg button:hover { color: var(--ink); }
+    .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+    .seg .count { color: var(--muted); margin-left: 4px; }
+    .seg button[aria-pressed="true"] .count { color: var(--accent); opacity: .7; }
+
+    .search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--field); border-radius: 10px; padding: 0 12px; height: 42px; min-width: 0; }
+    .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .search input { border: 0; outline: 0; font: inherit; font-size: 15px; color: var(--ink); background: none; width: 100%; }
+    .search svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+
+    /* Cards de contrato com a cláusula dentro */
+    .contract-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); display: flex; flex-direction: column; overflow: hidden;
+      transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease; cursor: pointer; text-align: left;
+    }
+    .contract-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: #D5DBE6; }
+    .contract-card .expand { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex-shrink: 0; transition: background .15s, color .15s; }
+    .contract-card:hover .expand { background: var(--accent); color: #fff; }
+    .contract-card .expand svg { width: 15px; height: 15px; }
+
+    .stage { position: relative; margin: 0 20px; border-radius: 10px; padding: 22px 18px; overflow: hidden; min-height: 168px; display: flex; align-items: center; }
+    .stage[data-tone="risk"] { background: linear-gradient(135deg, #FFE4E1 0%, #F9D5EC 45%, #E3DDFD 100%); }
+    .stage[data-tone="warn"] { background: linear-gradient(135deg, #FFF0D6 0%, #FDE1D3 50%, #F3E4FB 100%); }
+    .stage[data-tone="ok"]   { background: linear-gradient(135deg, #DDF3E8 0%, #DCEBFB 55%, #E9E4FD 100%); }
+
+    .paper { background: #fff; border-radius: 8px; box-shadow: 0 8px 24px -10px rgba(11,37,69,.25); padding: 14px 16px; width: 100%; }
+    .paper .ref { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .paper .ref svg { width: 13px; height: 13px; }
+    .paper .before, .paper .after { font-size: 14px; line-height: 1.5; }
+
+    /* Redline: o risco do texto atual é desenhado ao passar o mouse; a nova redação aparece em seguida */
+    /* Fundo linear por fragmento de linha (box-decoration-break) risca cada linha do texto */
+    .strike {
+      color: var(--ink-2);
+      background: linear-gradient(var(--risk), var(--risk)) no-repeat 0 58% / 0% 1.5px;
+      -webkit-box-decoration-break: clone; box-decoration-break: clone;
+      transition: background-size .5s cubic-bezier(.65,0,.35,1), color .3s;
+    }
+    .paper .after { color: var(--ok); margin-top: 6px; display: flex; gap: 6px; align-items: baseline; opacity: 0; transform: translateY(4px); transition: opacity .3s ease .35s, transform .3s ease .35s; }
+    .paper .after .plus { font-weight: 600; }
+    .contract-card:hover .strike, .contract-card:focus-visible .strike { background-size: 100% 1.5px; color: var(--risk); }
+    .contract-card:hover .after, .contract-card:focus-visible .after { opacity: 1; transform: none; }
+    @media (hover: none) {
+      .strike { background-size: 100% 1.5px; color: var(--risk); }
+      .paper .after { opacity: 1; transform: none; }
+    }
+
+    .checks li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); padding: 3px 0; }
+    .checks svg { width: 15px; height: 15px; color: var(--ok); flex-shrink: 0; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+    .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .pill[data-tone="risk"] { background: var(--risk-soft); color: var(--risk); }
+    .pill[data-tone="warn"] { background: var(--warn-soft); color: var(--warn); }
+    .pill[data-tone="ok"]   { background: var(--ok-soft); color: var(--ok); }
+
+    .lucide { stroke-width: 1.75; }
+
+    /* ---------- Análise ---------- */
+    .subbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+    .tabs { display: flex; gap: 4px; }
+    .tabs button { font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-2); background: none; border: 0; padding: 14px 4px; margin-right: 16px; border-bottom: 2px solid transparent; cursor: pointer; }
+    .tabs button:hover { color: var(--ink); }
+    .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+    .tabs .count { color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+    .select { position: relative; display: inline-flex; align-items: center; }
+    .select select { appearance: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); background: none; border: 0; padding: 6px 26px 6px 0; cursor: pointer; }
+    .select svg { position: absolute; right: 4px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+
+    .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; transition: border-color .15s, color .15s; }
+    .icon-btn:hover { color: var(--accent); border-color: #C9CFF7; }
+    .icon-btn svg { width: 17px; height: 17px; }
+
+    .mode { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: help; }
+    .mode::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, var(--muted)); }
+
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+
+    /* Documento do contrato */
+    .doc { max-height: calc(100vh - 190px); overflow-y: auto; scroll-behavior: smooth; }
+    .doc-page { padding: 32px 40px 36px; border-bottom: 1px solid var(--line); }
+    .doc-page:last-child { border-bottom: 0; }
+    .doc-page-label { font-size: 13px; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .doc-page-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .clause { font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.7; color: #24364F; max-width: 68ch; padding: 6px 0 6px 16px; margin-left: -18px; border-left: 2px solid transparent; transition: background .3s, border-color .3s; border-radius: 0 6px 6px 0; }
+    .clause + .clause { margin-top: 10px; }
+    .clause .section { display: block; font-family: "Geist", sans-serif; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 2px; }
+    .clause[data-flag] { border-left-color: var(--risk); }
+    .clause[data-flag="warn"] { border-left-color: var(--amber); }
+    .clause.focus { background: #FFF5F4; }
+    .clause[data-flag="warn"].focus { background: #FFF8EC; }
+    .page-pills { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .page-pills button { font: inherit; font-size: 13px; color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; white-space: nowrap; }
+    .page-pills button:hover { border-color: var(--accent); color: var(--accent); }
+
+    .page-link { font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .page-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .page-link svg { width: 13px; height: 13px; }
+
+    /* Veredito */
+    .meter { height: 6px; border-radius: 999px; background: #EDF1F6; overflow: hidden; }
+    .meter span { display: block; height: 100%; width: 0; border-radius: inherit; transition: width 1.1s cubic-bezier(.22,1,.36,1); }
+    .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+    .facts > div { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
+    .facts > div:first-child { border-left: 0; }
+
+    /* Riscos em acordeão */
+    .risk { border-top: 1px solid var(--line); }
+    .risk:first-child { border-top: 0; }
+    .risk > button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: none; border: 0; cursor: pointer; text-align: left; font: inherit; }
+    .risk > button:hover { background: #FAFBFD; }
+    .risk .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .risk .chev { width: 16px; height: 16px; color: var(--muted); transition: transform .25s; flex-shrink: 0; }
+    .risk[data-open="true"] .chev { transform: rotate(90deg); }
+    .risk .body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+    .risk[data-open="true"] .body { grid-template-rows: 1fr; }
+    .risk .body > div { overflow: hidden; }
+    .redline-box { margin: 0 20px 18px 40px; }
+    .redline-box .label { font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+    .redline-box .now { font-family: "Source Serif 4", Georgia, serif; font-size: 15px; line-height: 1.6; }
+    .redline-box .now .strike { color: var(--risk); }
+    .risk[data-open="true"] .now .strike { background-size: 100% 1.5px; }
+    .redline-box .new { font-family: "Source Serif 4", Georgia, serif; font-size: 15px; line-height: 1.6; color: #14532D; background: #EEF8F2; border-radius: 8px; padding: 10px 12px; }
+    .redline-box .why { font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+    .redline-box .src { font-size: 13px; color: var(--muted); margin-top: 10px; display: flex; gap: 6px; align-items: center; }
+    .redline-box .src svg { width: 13px; height: 13px; }
+
+    .policy { display: grid; grid-template-columns: 20px 1fr; gap: 12px; padding: 16px 20px; border-top: 1px solid var(--line); }
+    .policy:first-child { border-top: 0; }
+    .policy svg { width: 18px; height: 18px; margin-top: 2px; }
+
+    .empty-ok { text-align: center; padding: 40px 24px; }
+    .empty-ok svg { width: 32px; height: 32px; color: var(--ok); margin: 0 auto 10px; }
+
+    /* Carregamento */
+    .skeleton { background: linear-gradient(90deg, #EEF2F7 0%, #F7F9FC 50%, #EEF2F7 100%); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; border-radius: 6px; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Gaveta de detalhes técnicos */
+    .scrim { position: fixed; inset: 0; background: rgba(11,37,69,.28); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
+    .scrim.show { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); background: var(--surface); transform: translateX(100%); visibility: hidden; transition: transform .3s cubic-bezier(.22,1,.36,1), visibility 0s .3s; z-index: 61; display: flex; flex-direction: column; }
+    .drawer.show { transform: none; visibility: visible; box-shadow: -20px 0 50px -20px rgba(11,37,69,.3); transition: transform .3s cubic-bezier(.22,1,.36,1); }
+    .kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; font-size: 14px; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; text-align: right; color: var(--ink); }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+    /* Assistente */
+    .fab { position: fixed; right: 24px; bottom: 24px; z-index: 50; display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px 12px 14px; border-radius: 999px; background: var(--ink); color: #fff; font: inherit; font-size: 15px; font-weight: 500; border: 0; cursor: pointer; box-shadow: 0 14px 30px -10px rgba(11,37,69,.5); transition: transform .2s, opacity .2s; }
+    .fab:hover { transform: translateY(-2px); }
+    .fab svg { width: 18px; height: 18px; }
+    .fab.hide { opacity: 0; pointer-events: none; transform: translateY(8px); }
+    .chat { position: fixed; right: 24px; bottom: 24px; z-index: 55; width: min(420px, calc(100vw - 32px)); height: min(640px, calc(100vh - 48px)); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 30px 70px -20px rgba(11,37,69,.35); display: flex; flex-direction: column; overflow: hidden; transform-origin: bottom right; transform: scale(.96) translateY(10px); opacity: 0; pointer-events: none; transition: transform .22s cubic-bezier(.22,1,.36,1), opacity .18s; }
+    .chat.show { transform: none; opacity: 1; pointer-events: auto; }
+    .msgs { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .msg-user { align-self: flex-end; max-width: 85%; background: var(--accent); color: #fff; padding: 10px 14px; border-radius: 14px 14px 4px 14px; font-size: 15px; line-height: 1.5; }
+    .msg-bot { align-self: flex-start; max-width: 92%; font-size: 15px; line-height: 1.6; color: var(--ink); animation: rise .3s ease; }
+    .msg-bot strong { font-weight: 600; }
+    .msg-bot code { font-family: inherit; font-size: inherit; color: var(--ink-2); }
+    .msg-bot em { font-style: normal; color: var(--ink-2); }
+    .msg-bot .meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; color: var(--muted); cursor: help; }
+    .msg-bot .meta svg { width: 13px; height: 13px; }
+    .msg-blocked { background: var(--warn-soft); color: #6B4500; padding: 10px 14px; border-radius: 12px; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .typing { display: inline-flex; gap: 4px; padding: 10px 2px; }
+    .typing span { width: 6px; height: 6px; border-radius: 50%; background: #B6C0CF; animation: blink 1.2s infinite; }
+    .typing span:nth-child(2) { animation-delay: .2s; }
+    .typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
+    .suggest { display: block; width: 100%; text-align: left; font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: border-color .15s, color .15s; }
+    .suggest:hover { border-color: var(--accent); color: var(--accent); }
+    .composer { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+    .composer input { flex: 1; min-width: 0; font: inherit; font-size: 15px; border: 1px solid var(--field); border-radius: 10px; padding: 0 12px; height: 42px; outline: 0; color: var(--ink); }
+    .composer input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .composer button { width: 42px; height: 42px; border-radius: 10px; border: 0; background: var(--accent); color: #fff; display: grid; place-items: center; cursor: pointer; }
+    .composer button:disabled { opacity: .5; cursor: default; }
+    .composer button svg { width: 18px; height: 18px; }
+
+    @media (max-width: 1023px) {
+      .doc { max-height: none; }
+      .doc-page { padding: 24px 20px; }
+      .clause { margin-left: -12px; padding-left: 10px; }
+    }
+    @media (max-width: 640px) {
+      .fab { right: 16px; bottom: 16px; }
+      .chat { right: 0; bottom: 0; width: 100vw; height: 100dvh; border-radius: 0; }
+      .facts { grid-template-columns: 1fr; }
+      .facts > div { border-left: 0; border-top: 1px solid var(--line); }
+      .facts > div:first-child { border-top: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+    }
+    /* Alvos de toque de pelo menos 44px em telas sensíveis ao toque */
+    @media (pointer: coarse) {
+      .icon-btn { width: 44px; height: 44px; }
+      .seg button, .page-pills button { min-height: 44px; }
+      .page-link { min-height: 32px; }
+      .select select { min-height: 44px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Cabeçalho -->
+  <header class="sticky top-0 z-40 bg-white/85 backdrop-blur border-b" style="border-color: var(--line)">
+    <div class="frame flex items-center justify-between h-16 px-4 sm:px-6">
+      <div class="flex items-center gap-8">
+        <button onclick="switchMainView('home')" class="flex items-center gap-2.5" aria-label="AuditOps, início">
+          <span class="w-8 h-8 rounded-lg grid place-items-center text-white" style="background: var(--accent)">
+            <i data-lucide="file-check-2" class="w-[18px] h-[18px]"></i>
+          </span>
+          <span class="text-[17px] font-semibold tracking-tight">AuditOps</span>
+        </button>
+        <nav class="hidden sm:flex items-center gap-1" aria-label="Principal">
+          <button class="nav-link" id="nav-home" aria-current="page" onclick="switchMainView('home')">Contratos</button>
+        </nav>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="btn btn-primary">
+          <i data-lucide="upload"></i><span id="upload-label">Enviar contrato</span>
+          <input id="upload-input" type="file" accept=".pdf,.docx" class="sr-only" onchange="handleUpload(event)">
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ INÍCIO ============ -->
+    <section id="view-home">
+      <!-- Hero -->
+      <div class="relative overflow-hidden">
+        <canvas id="ribbon" aria-hidden="true"></canvas>
+        <div class="frame px-4 sm:px-6">
+          <div class="relative pt-20 sm:pt-28 pb-20 sm:pb-24 max-w-[760px]">
+            <p class="text-[15px] mb-6" style="color: var(--ink-2)">
+              Valor em análise agora: <span id="live-value" class="tabular" style="color: var(--muted)">R$ 0</span>
+            </p>
+            <h1 class="display text-[40px] sm:text-[56px]">
+              Assine contratos sem surpresas.
+              <span class="quiet">Encontre cada cláusula de risco, a página exata e a redação corrigida antes da assinatura.</span>
+            </h1>
+            <div class="flex flex-wrap gap-3 mt-10">
+              <button class="btn btn-primary" onclick="document.getElementById('portfolio').scrollIntoView({behavior: 'smooth'})">
+                Ver contratos <i data-lucide="chevron-right"></i>
+              </button>
+              <label class="btn btn-ghost" for="upload-input">
+                <i data-lucide="file-up"></i> Analisar um PDF ou DOCX
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicadores da carteira -->
+      <div class="border-y bg-white" style="border-color: var(--line)">
+        <div class="frame grid grid-cols-2 lg:grid-cols-4" id="portfolio-stats"></div>
+      </div>
+
+      <!-- Carteira -->
+      <div class="frame px-4 sm:px-6 pt-20 pb-28" id="portfolio">
+        <h2 class="display text-[30px] sm:text-[38px] max-w-[820px]">
+          Contratos em análise.
+          <span class="quiet">Abra um contrato para ver o que bloqueia a assinatura e como corrigir.</span>
+        </h2>
+
+        <div class="flex flex-col lg:flex-row lg:items-center gap-3 mt-10 mb-6">
+          <div class="seg" role="group" aria-label="Filtrar por situação" id="filters"></div>
+          <div class="search lg:ml-auto lg:w-[340px]">
+            <i data-lucide="search"></i>
+            <input id="search-input" type="search" placeholder="Buscar fornecedor ou assunto" oninput="renderPortfolio()" aria-label="Buscar contratos">
+          </div>
+        </div>
+
+        <div id="portfolio-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        <div id="portfolio-empty" class="hidden text-center py-20" style="color: var(--muted)">
+          <p class="text-[15px]">Nenhum contrato encontrado para essa busca.</p>
+          <button class="btn btn-ghost mt-4" onclick="clearSearch()">Limpar busca</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTRATO ABERTO (Análise e Negociação) ============ -->
+    <section id="view-contract" class="hidden pb-28">
+      <div class="subbar">
+        <div class="frame px-4 sm:px-6">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4">
+            <button class="page-link" onclick="switchMainView('home')" style="font-size: 14px; color: var(--ink-2)">
+              <i data-lucide="arrow-left"></i>Contratos
+            </button>
+            <span style="color: var(--line)">/</span>
+            <label class="select">
+              <span class="sr-only">Trocar contrato</span>
+              <select id="contract-select" onchange="openContract(this.value)"></select>
+              <i data-lucide="chevron-down"></i>
+            </label>
+            <span id="contract-subject" class="text-[15px] hidden sm:inline" style="color: var(--muted)"></span>
+            <div class="ml-auto flex items-center gap-2">
+              <span id="exec-mode" class="mode hidden"></span>
+              <a id="file-pdf" class="icon-btn" href="#" target="_blank" rel="noopener" title="Baixar PDF original" aria-label="Baixar PDF original"><i data-lucide="file-down"></i></a>
+              <button class="icon-btn" onclick="openDrawer()" title="Detalhes técnicos" aria-label="Detalhes técnicos"><i data-lucide="cpu"></i></button>
+            </div>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Seções do contrato">
+            <button role="tab" id="tab-analysis" aria-controls="panel-analysis" aria-selected="true" onclick="switchContractTab('analysis')">Análise</button>
+            <button role="tab" id="tab-negotiation" aria-controls="panel-negotiation" aria-selected="false" onclick="switchContractTab('negotiation')">Negociação</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carregando -->
+      <div id="contract-loading" class="frame px-4 sm:px-6 py-10 hidden">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="spinner"></div>
+          <div>
+            <p class="text-[15px] font-medium">Analisando o contrato</p>
+            <p class="text-[14px]" style="color: var(--muted)" id="loading-detail">Lendo cada cláusula e comparando com as políticas da empresa. Pode levar alguns minutos.</p>
+          </div>
+        </div>
+        <div class="grid lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 card p-8 space-y-4">
+            <div class="skeleton h-4 w-24"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-4 w-11/12"></div><div class="skeleton h-4 w-10/12"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-4 w-9/12"></div>
+          </div>
+          <div class="lg:col-span-5 card p-6 space-y-4">
+            <div class="skeleton h-6 w-2/3"></div><div class="skeleton h-2 w-full"></div><div class="skeleton h-16 w-full"></div><div class="skeleton h-16 w-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Análise -->
+      <div id="panel-analysis" role="tabpanel" aria-labelledby="tab-analysis" class="frame px-4 sm:px-6 py-6 hidden">
+        <div class="seg lg:hidden mb-4" role="group" aria-label="Alternar visualização">
+          <button aria-pressed="true" id="mobile-show-verdict" onclick="setMobilePane('verdict')">Veredito</button>
+          <button aria-pressed="false" id="mobile-show-doc" onclick="setMobilePane('doc')">Contrato</button>
+        </div>
+        <div class="grid lg:grid-cols-12 gap-6 items-start">
+          <!-- Documento -->
+          <div id="pane-doc" class="lg:col-span-7 card overflow-hidden hidden lg:block">
+            <div class="flex items-center justify-between gap-4 px-5 py-3 border-b" style="border-color: var(--line)">
+              <span class="text-[14px] font-medium">Contrato</span>
+              <div class="page-pills" id="page-pills"></div>
+            </div>
+            <div class="doc" id="doc" tabindex="0" role="region" aria-label="Texto do contrato"></div>
+          </div>
+
+          <!-- Veredito -->
+          <div id="pane-verdict" class="lg:col-span-5 space-y-6 lg:block lg:sticky lg:top-24">
+            <div class="card overflow-hidden">
+              <div class="p-6">
+                <p class="text-[14px]" style="color: var(--muted)">Recomendação</p>
+                <h2 id="verdict-title" class="text-[26px] font-medium tracking-tight mt-1"></h2>
+                <div class="flex items-center justify-between mt-5 mb-2 text-[14px]">
+                  <span style="color: var(--ink-2)">Conformidade com as políticas</span>
+                  <span class="tabular font-medium"><span id="score-value">0</span> de 100</span>
+                </div>
+                <div class="meter"><span id="score-bar"></span></div>
+                <details class="mt-5 group">
+                  <summary class="page-link list-none cursor-pointer" style="font-size: 14px">
+                    <i data-lucide="chevron-right" class="transition-transform group-open:rotate-90"></i>Ler o parecer completo
+                  </summary>
+                  <p id="legal-opinion" class="text-[14px] leading-relaxed mt-3" style="color: var(--ink-2)"></p>
+                </details>
+              </div>
+              <div class="facts" id="facts"></div>
+            </div>
+
+            <div class="card overflow-hidden">
+              <div class="tabs px-5 border-b" style="border-color: var(--line)" role="tablist" aria-label="Detalhes da análise">
+                <button role="tab" id="subtab-risks" aria-controls="risks-list" aria-selected="true" onclick="switchVerdictTab('risks')">Riscos<span class="count" id="risks-count"></span></button>
+                <button role="tab" id="subtab-policies" aria-controls="policies-list" aria-selected="false" onclick="switchVerdictTab('policies')">Políticas<span class="count" id="policies-count"></span></button>
+              </div>
+              <div id="risks-list" role="tabpanel" aria-labelledby="subtab-risks"></div>
+              <div id="policies-list" role="tabpanel" aria-labelledby="subtab-policies" class="hidden"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Negociação -->
+      <div id="panel-negotiation" role="tabpanel" aria-labelledby="tab-negotiation" class="frame px-4 sm:px-6 py-10 hidden">
+        <div class="grid lg:grid-cols-12 gap-10 items-start">
+          <div class="lg:col-span-5 lg:sticky lg:top-24">
+            <p class="text-[14px]" style="color: var(--muted)">Economia possível por ano</p>
+            <p id="neg-savings" class="text-[44px] font-medium tracking-tight tabular mt-1"></p>
+            <span id="neg-bench" class="pill mt-2"></span>
+            <p id="neg-financial" class="text-[15px] leading-relaxed mt-6" style="color: var(--ink-2)"></p>
+            <p id="neg-summary" class="text-[15px] leading-relaxed mt-4" style="color: var(--ink-2)"></p>
+          </div>
+          <div class="lg:col-span-7">
+            <h2 class="display text-[26px]">Pontos para levar à mesa. <span class="quiet">Cada um com o termo atual, a contraproposta e o precedente usado como referência.</span></h2>
+            <div id="neg-levers" class="mt-8 space-y-4"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Detalhes técnicos -->
+  <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" inert>
+    <div class="flex items-center justify-between px-6 h-16 border-b" style="border-color: var(--line)">
+      <h2 id="drawer-title" class="text-[17px] font-medium">Detalhes técnicos</h2>
+      <button class="icon-btn" onclick="closeDrawer()" aria-label="Fechar"><i data-lucide="x"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-8" id="drawer-body"></div>
+  </aside>
+
+  <!-- Assistente -->
+  <button id="chat-fab" class="fab hide" onclick="toggleChat(true)" aria-haspopup="dialog">
+    <i data-lucide="message-circle"></i>Perguntar sobre este contrato
+  </button>
+  <div id="chat" class="chat" role="dialog" aria-modal="false" aria-labelledby="chat-title" inert>
+    <div class="flex items-center justify-between gap-3 px-4 h-16 border-b" style="border-color: var(--line)">
+      <div class="min-w-0">
+        <p id="chat-title" class="text-[15px] font-medium">Assistente</p>
+        <p id="chat-context" class="text-[13px] truncate" style="color: var(--muted)"></p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button class="icon-btn" onclick="resetChat()" title="Nova conversa" aria-label="Nova conversa"><i data-lucide="rotate-ccw"></i></button>
+        <button class="icon-btn" onclick="toggleChat(false)" title="Fechar" aria-label="Fechar assistente"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+    <div class="msgs" id="chat-msgs" aria-live="polite"></div>
+    <form class="composer" onsubmit="event.preventDefault(); sendChat()">
+      <input id="chat-input" type="text" placeholder="Pergunte sobre cláusulas, riscos ou valores" aria-label="Sua pergunta" autocomplete="off">
+      <button type="submit" id="chat-send" aria-label="Enviar pergunta"><i data-lucide="arrow-up"></i></button>
+    </form>
+  </div>
+
+  <textarea id="contract-textarea" class="hidden" aria-hidden="true"></textarea>
+
+  <script>
+    // ------------------------------------------------------------------
+    // Estado
+    // ------------------------------------------------------------------
+    let SAMPLES_CACHE = {};
+    let CURRENT_SAMPLE_KEY = null;
+    let CURRENT_REPORT = null;
+    let HOME_FILTER = 'all';
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const brl = n => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Carteira. Os trechos de "preview" são reais (samples/*.md); as redações sugeridas
+    // seguem as políticas da base de conhecimento (knowledge_base/*.md).
+    const CONTRACTS = {
+      enterprise_critical: {
+        vendor: 'TechNova', subject: 'SaaS logístico e roteirização', annual: 180000, savings: 32400, score: 32, status: 'risk',
+        preview: { page: 5, clause: '11.1', before: 'A CONTRATANTE indenizará a CONTRATADA por perdas, danos e lucros cessantes', after: 'Responsabilidade limitada a 12 meses de pagamentos' },
+        files: { pdf: '/samples/pdf/contrato_saas_enterprise.pdf', docx: '/samples/docx/contrato_saas_enterprise.docx' },
+      },
+      fintech_lgpd_risk: {
+        vendor: 'PaySphere', subject: 'Pagamentos Pix e gateway', annual: 360000, savings: 54000, score: 44, status: 'risk',
+        preview: { page: 2, clause: '4.3', before: 'comunicará a CONTRATANTE em até 5 (cinco) dias úteis', after: 'Comunicação de incidente em até 24 horas' },
+        files: { pdf: '/samples/pdf/contrato_fintech_openfinance.pdf', docx: '/samples/docx/contrato_fintech_openfinance.docx' },
+      },
+      ai_gpu_critical: {
+        vendor: 'NeuralForge', subject: 'Cluster de GPUs e IA generativa', annual: 620000, savings: 136400, score: 28, status: 'risk',
+        preview: { page: 2, clause: '3.1', before: 'licença perpétua para coletar e utilizar todos os Prompts', after: 'Proibido usar prompts e dados para treinar modelos' },
+        files: { pdf: '/samples/pdf/contrato_ia_generativa_gpu.pdf', docx: '/samples/docx/contrato_ia_generativa_gpu.docx' },
+      },
+      cybersec_soc_moderate: {
+        vendor: 'Aegis', subject: 'SOC 24×7 e resposta a incidentes', annual: 264000, savings: 28800, score: 64, status: 'warn',
+        preview: { page: 2, clause: '3.2', before: 'atendimento em até 12 (doze) horas corridas', after: 'Contenção de incidente crítico em até 30 minutos' },
+        files: { pdf: '/samples/pdf/contrato_cybersec_soc.pdf', docx: '/samples/docx/contrato_cybersec_soc.docx' },
+      },
+      erp_fiscal_high: {
+        vendor: 'TitanERP', subject: 'ERP financeiro e SPED fiscal', annual: 480000, savings: 72000, score: 58, status: 'warn',
+        preview: { page: 3, clause: '5.2', before: 'Taxa de Extração e Desmobilização de R$ 95.000,00', after: 'Exportação dos dados fiscais sem custo' },
+        files: { pdf: '/samples/pdf/contrato_erp_fiscal_cloud.pdf', docx: '/samples/docx/contrato_erp_fiscal_cloud.docx' },
+      },
+      standard_sla: {
+        vendor: 'CloudCore', subject: 'Suporte e infraestrutura cloud', annual: 102000, savings: 0, score: 98, status: 'ok',
+        checks: ['Disponibilidade acima da política', 'Dados pessoais tratados no Brasil', 'Foro em São Paulo'],
+        files: { pdf: '/samples/pdf/contrato_padrao_sla.pdf', docx: '/samples/docx/contrato_padrao_sla.docx' },
+      },
+      rh_workday_compliant: {
+        vendor: 'PeopleFirst', subject: 'Plataforma de RH e folha', annual: 144000, savings: 0, score: 96, status: 'ok',
+        checks: ['Dados de folha criptografados no Brasil', 'Saída sem multa com 30 dias de aviso', 'Foro em São Paulo'],
+        files: { pdf: '/samples/pdf/contrato_rh_cloud.pdf', docx: '/samples/docx/contrato_rh_cloud.docx' },
+      },
+      telecom_sdwan_compliant: {
+        vendor: 'VeloNet', subject: 'Conectividade SD-WAN e 5G', annual: 216000, savings: 0, score: 92, status: 'ok',
+        checks: ['Disponibilidade com redundância 5G', 'Reparo de fibra em até 4 horas', 'Teto de responsabilidade de 12 meses'],
+        files: { pdf: '/samples/pdf/contrato_telecom_sdwan.pdf', docx: '/samples/docx/contrato_telecom_sdwan.docx' },
+      },
+    };
+
+    const STATUS = {
+      risk: { label: 'Bloqueado', filter: 'Bloqueados' },
+      warn: { label: 'Com ajustes', filter: 'Com ajustes' },
+      ok:   { label: 'Pronto para assinar', filter: 'Prontos' },
+    };
+
+    // ------------------------------------------------------------------
+    // Início
+    // ------------------------------------------------------------------
+    function renderStats() {
+      const list = Object.values(CONTRACTS);
+      const blocked = list.filter(c => c.status !== 'ok').length;
+      const savings = list.reduce((s, c) => s + c.savings, 0);
+      const ready = list.filter(c => c.status === 'ok').length;
+      const stats = [
+        { value: list.length, label: 'contratos na carteira' },
+        { value: blocked, label: 'precisam de ajuste antes da assinatura' },
+        { value: savings, label: 'por ano em economia possível', money: true },
+        { value: ready, label: 'prontos para assinar' },
+      ];
+      document.getElementById('portfolio-stats').innerHTML = stats.map(s => `
+        <div class="stat">
+          <div class="text-[28px] font-medium tracking-tight tabular" data-count="${s.value}" data-money="${s.money ? 1 : 0}">${s.money ? brl(0) : 0}</div>
+          <div class="text-[14px] mt-1" style="color: var(--muted)">${esc(s.label)}</div>
+        </div>`).join('');
+      document.querySelectorAll('[data-count]').forEach(el => countUp(el, Number(el.dataset.count), el.dataset.money === '1'));
+    }
+
+    function countUp(el, target, money, duration = 1400) {
+      const fmt = v => money ? brl(v) : Math.round(v).toLocaleString('pt-BR');
+      if (reduceMotion) { el.textContent = fmt(target); return; }
+      const start = performance.now();
+      const step = now => {
+        const p = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(target * eased);
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    function renderFilters() {
+      const list = Object.values(CONTRACTS);
+      const groups = [
+        { key: 'all', label: 'Todos', n: list.length },
+        ...['risk', 'warn', 'ok'].map(k => ({ key: k, label: STATUS[k].filter, n: list.filter(c => c.status === k).length })),
+      ];
+      document.getElementById('filters').innerHTML = groups.map(g => `
+        <button aria-pressed="${g.key === HOME_FILTER}" onclick="setFilter('${g.key}')">${esc(g.label)}<span class="count">${g.n}</span></button>
+      `).join('');
+    }
+
+    function setFilter(key) {
+      HOME_FILTER = key;
+      renderFilters();
+      renderPortfolio();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      setFilter('all');
+    }
+
+    function renderPortfolio() {
+      const q = document.getElementById('search-input').value.trim().toLowerCase();
+      const keys = Object.keys(CONTRACTS).filter(key => {
+        const c = CONTRACTS[key];
+        if (HOME_FILTER !== 'all' && c.status !== HOME_FILTER) return false;
+        if (!q) return true;
+        const hay = [c.vendor, c.subject, c.preview?.before, c.preview?.after, ...(c.checks || [])].join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+
+      const grid = document.getElementById('portfolio-grid');
+      document.getElementById('portfolio-empty').classList.toggle('hidden', keys.length > 0);
+      grid.classList.toggle('hidden', keys.length === 0);
+
+      grid.innerHTML = keys.map(key => {
+        const c = CONTRACTS[key];
+        const stage = c.preview ? `
+          <div class="paper">
+            <div class="ref"><i data-lucide="file-text"></i>Página ${c.preview.page}, cláusula ${esc(c.preview.clause)}</div>
+            <div class="before serif"><span class="strike">${esc(c.preview.before)}</span></div>
+            <div class="after"><span class="plus">+</span><span>${esc(c.preview.after)}</span></div>
+          </div>` : `
+          <div class="paper">
+            <ul class="checks">${c.checks.map(t => `<li><i data-lucide="check"></i>${esc(t)}</li>`).join('')}</ul>
+          </div>`;
+
+        return `
+          <article class="contract-card" tabindex="0" role="button" aria-label="Abrir análise do contrato ${esc(c.vendor)}"
+            onclick="openContract('${key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openContract('${key}')}">
+            <div class="flex items-start justify-between gap-3 p-5">
+              <div class="min-w-0">
+                <h3 class="text-[18px] font-semibold tracking-tight">${esc(c.vendor)}</h3>
+                <p class="text-[14px] mt-0.5 truncate" style="color: var(--muted)">${esc(c.subject)}</p>
+              </div>
+              <span class="expand" aria-hidden="true"><i data-lucide="maximize-2"></i></span>
+            </div>
+            <div class="stage" data-tone="${c.status}">${stage}</div>
+            <div class="flex items-center justify-between gap-3 px-5 py-4 mt-auto">
+              <span class="pill" data-tone="${c.status}">${STATUS[c.status].label}</span>
+              <span class="text-[14px] tabular" style="color: var(--ink-2)">${brl(c.annual)}/ano</span>
+            </div>
+          </article>`;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // ------------------------------------------------------------------
+    // Faixa animada (canvas): fios finos formando uma faixa de seda
+    // ------------------------------------------------------------------
+    // A faixa ondula ao abrir a página e desacelera até parar (4,5 s). Depois disso, só se move
+    // em resposta ao mouse sobre o topo da página: os fios seguem o cursor e assentam quando ele
+    // para ou sai. Movimento automático fica abaixo de 5 s (WCAG 2.2.2); com "reduzir movimento",
+    // a faixa fica parada e não reage.
+    function startRibbon() {
+      const canvas = document.getElementById('ribbon');
+      const hero = canvas.parentElement;
+      const ctx = canvas.getContext('2d');
+      const colors = ['#7B61FF', '#5B8DEF', '#3EC7E0', '#F59E8B', '#F06FA4', '#9B6BFF'];
+      const DURATION = 4500, TRAVEL = 1.8;   // entrada: duração (ms) e quanto a fase anda até parar
+      let w = 0, h = 0, start = null, raf = null;
+      // Estado atual e alvo: fase da ondulação e deslocamento dos fios em direção ao cursor
+      const cur = { phase: reduceMotion ? TRAVEL : 0, bendX: 0, bendY: 0 };
+      const target = { phase: TRAVEL, bendX: 0, bendY: 0 };
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = canvas.clientWidth; h = canvas.clientHeight;
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      // Cada fio é uma curva em S do topo até o canto inferior direito; os fios se abrem em leque
+      // e ondulam com fases diferentes, formando uma faixa de "seda".
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        const strands = 90;
+        const ox = w < 900 ? w * 0.5 : w * 0.56;
+        const { phase, bendX, bendY } = cur;
+        for (let i = 0; i < strands; i++) {
+          const k = i / (strands - 1);
+          const ci = k * (colors.length - 1);
+          const grad = ctx.createLinearGradient(ox, 0, w, h);
+          grad.addColorStop(0, colors[Math.floor(ci)]);
+          grad.addColorStop(1, colors[Math.min(colors.length - 1, Math.floor(ci) + 1)]);
+          ctx.strokeStyle = grad;
+          ctx.globalAlpha = 0.18 + 0.5 * Math.sin(Math.PI * k);
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ox + k * 160, -60);
+          ctx.bezierCurveTo(
+            ox + k * 300 + Math.sin(phase + k * 2.0) * 70 + bendX * (1 - k * 0.5), h * 0.32 + bendY * 0.6,
+            w * 0.78 + k * 120 + Math.cos(phase * 1.2 + k * 2.6) * 90 + bendX * (0.5 + k * 0.5), h * 0.62 + bendY,
+            w + 60 + k * 60, h + 80
+          );
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function intro(t) {
+        start ??= t;
+        const p = Math.min(1, (t - start) / DURATION);
+        cur.phase = TRAVEL * (1 - Math.pow(1 - p, 3));   // desacelera até parar
+        draw();
+        raf = p < 1 ? requestAnimationFrame(intro) : null;
+      }
+
+      // Aproxima o estado atual do alvo a cada quadro e para sozinho quando chega perto o bastante
+      function follow() {
+        let moving = false;
+        for (const key of ['phase', 'bendX', 'bendY']) {
+          const d = target[key] - cur[key];
+          if (Math.abs(d) > 0.002) { cur[key] += d * 0.08; moving = true; } else cur[key] = target[key];
+        }
+        draw();
+        raf = moving ? requestAnimationFrame(follow) : null;
+      }
+
+      function nudge() {
+        if (start !== null && !raf) raf = requestAnimationFrame(follow);
+      }
+
+      resize();
+      window.addEventListener('resize', () => { resize(); draw(); });
+      if (reduceMotion) { draw(); return; }
+      raf = requestAnimationFrame(intro);
+
+      hero.addEventListener('pointermove', e => {
+        if (e.pointerType !== 'mouse') return;
+        const r = hero.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;    // 0 a 1
+        const y = (e.clientY - r.top) / r.height;
+        target.phase = TRAVEL + (x - 0.5) * 1.6;
+        target.bendX = (x - 0.7) * 120;
+        target.bendY = (y - 0.5) * 70;
+        nudge();
+      });
+      hero.addEventListener('pointerleave', () => {
+        target.phase = TRAVEL; target.bendX = 0; target.bendY = 0;   // volta a assentar na posição de repouso
+        nudge();
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // Navegação
+    // ------------------------------------------------------------------
+    const REPORTS = {};        // relatórios já carregados, por contrato
+    let CONTRACT_TAB = 'analysis';
+    let UPLOADED = null;       // { name, text } do último arquivo enviado
+
+    function switchMainView(view) {
+      document.getElementById('view-home').classList.toggle('hidden', view !== 'home');
+      document.getElementById('view-contract').classList.toggle('hidden', view !== 'contract');
+      const nav = document.getElementById('nav-home');
+      view === 'home' ? nav.setAttribute('aria-current', 'page') : nav.removeAttribute('aria-current');
+      document.getElementById('chat-fab').classList.toggle('hide', view !== 'contract' || !CURRENT_REPORT);
+      if (view === 'home') toggleChat(false);
+      window.scrollTo({ top: 0 });
+    }
+
+    function switchContractTab(tab) {
+      CONTRACT_TAB = tab;
+      ['analysis', 'negotiation'].forEach(t => {
+        document.getElementById(`tab-${t}`).setAttribute('aria-selected', String(t === tab));
+        document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== tab || !CURRENT_REPORT);
+      });
+    }
+
+    function switchVerdictTab(tab) {
+      ['risks', 'policies'].forEach(t => {
+        document.getElementById(`subtab-${t}`).setAttribute('aria-selected', String(t === tab));
+        document.getElementById(`${t}-list`).classList.toggle('hidden', t !== tab);
+      });
+    }
+
+    function setMobilePane(pane) {
+      document.getElementById('mobile-show-verdict').setAttribute('aria-pressed', String(pane === 'verdict'));
+      document.getElementById('mobile-show-doc').setAttribute('aria-pressed', String(pane === 'doc'));
+      document.getElementById('pane-verdict').classList.toggle('hidden', pane !== 'verdict');
+      document.getElementById('pane-doc').classList.toggle('hidden', pane !== 'doc');
+    }
+
+    function renderContractSelect() {
+      const sel = document.getElementById('contract-select');
+      const opts = Object.entries(CONTRACTS).map(([k, c]) => `<option value="${k}">${esc(c.vendor)}</option>`);
+      if (UPLOADED) opts.push(`<option value="__upload">${esc(UPLOADED.name)}</option>`);
+      sel.innerHTML = opts.join('');
+      sel.value = CURRENT_SAMPLE_KEY || '__upload';
+    }
+
+    async function openContract(key) {
+      if (key === '__upload') key = null;
+      CURRENT_SAMPLE_KEY = key;
+      const c = key ? CONTRACTS[key] : null;
+      renderContractSelect();
+      document.getElementById('contract-subject').textContent = c ? c.subject : 'Documento enviado';
+      const pdf = document.getElementById('file-pdf');
+      pdf.classList.toggle('hidden', !c);
+      if (c) pdf.href = c.files.pdf;
+      resetChat();
+      switchMainView('contract');
+
+      const cacheKey = key || '__upload';
+      if (REPORTS[cacheKey]) { showReport(REPORTS[cacheKey]); return; }
+
+      const text = key ? SAMPLES_CACHE[key]?.content : UPLOADED?.text;
+      if (!text) { alert('O texto deste contrato ainda não carregou. Tente novamente em instantes.'); return; }
+      document.getElementById('contract-textarea').value = text;
+      setLoading(true);
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contract_text: text, contract_name: c ? c.vendor : UPLOADED.name }),
+        });
+        const report = await res.json();
+        if (!res.ok) throw new Error(report.error || `HTTP ${res.status}`);
+        REPORTS[cacheKey] = report;
+        if (CURRENT_SAMPLE_KEY === key) showReport(report);   // o usuário pode ter trocado de contrato no meio
+      } catch (e) {
+        setLoading(false);
+        alert(`Não foi possível analisar o contrato: ${e.message}. Tente abrir o contrato de novo.`);
+      }
+    }
+
+    function setLoading(on) {
+      document.getElementById('contract-loading').classList.toggle('hidden', !on);
+      if (on) {
+        CURRENT_REPORT = null;
+        ['analysis', 'negotiation'].forEach(t => document.getElementById(`panel-${t}`).classList.add('hidden'));
+        document.getElementById('chat-fab').classList.add('hide');
+        document.getElementById('exec-mode').classList.add('hidden');
+      }
+    }
+
+    function showReport(report) {
+      CURRENT_REPORT = report;
+      const text = CURRENT_SAMPLE_KEY ? SAMPLES_CACHE[CURRENT_SAMPLE_KEY]?.content : UPLOADED?.text;
+      if (text) document.getElementById('contract-textarea').value = text;
+      setLoading(false);
+      renderExecMode(report);
+      renderDocument(report);
+      renderVerdict(report);
+      renderNegotiation(report);
+      renderDrawer(report);
+      switchContractTab(CONTRACT_TAB);
+      // Só depois de o painel ficar visível: elemento oculto ignora a rolagem e o Chrome restauraria a posição antiga
+      document.getElementById('doc').scrollTo({ top: 0, behavior: 'instant' });
+      document.getElementById('chat-fab').classList.remove('hide');
+      lucide.createIcons();
+    }
+
+    // ---------- Formatação ----------
+    // Escapa primeiro e só então aplica negrito/código/quebras e transforma "Página N" em link
+    function richText(s) {
+      return esc(s)
+        .replace(/(^|\n)[ \t]*[*-][ \t]+/g, '$1• ')   // itens de lista do modelo ("* item") viram marcadores antes do itálico
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/P[áa]gina (\d+)/g, (m, n) => `<button class="page-link" onclick="goToPage(${Number(n)})">${m}</button>`)
+        .replace(/\n/g, '<br>');
+    }
+    const plain = s => String(s ?? '').replace(/\*\*/g, '');
+    // Primeiro valor em reais do texto ("R$ 180.000,00 anuais (R$ 15.000/mês)" -> "R$ 180.000,00")
+    const money = s => (plain(s).match(/R\$\s?[\d.]+(,\d{2})?/) || [plain(s).split('(')[0].trim() || '—'])[0];
+    // Valor anual mesmo quando o texto começa pelo mensal ("R$ 8.500,00/mês (R$ 102.000,00 anuais)")
+    const annualMoney = s => (plain(s).match(/R\$\s?[\d.]+(,\d{2})?(?=\s*(anua|\/ano|por ano))/i) || [money(s)])[0];
+    // "36 (trinta e seis) meses, com renovação..." vira "36 meses"; um número solto ganha a unidade
+    const term = s => {
+      const t = plain(s).replace(/\s*\([^)]*\)/g, '').split(/[,;]|\s+com\s+|\s+a contar\s+/)[0].trim();
+      return /^\d+$/.test(t) ? `${t} meses` : (t || '—');
+    };
+    const severityTone = sev => (sev === 'MÉDIA' ? 'warn' : 'risk');
+    const pageBtn = n => `<button class="page-link" onclick="goToPage(${Number(n)})"><i data-lucide="file-text"></i>Página ${Number(n)}</button>`;
+
+    function renderExecMode(r) {
+      const el = document.getElementById('exec-mode');
+      const modes = {
+        LIVE_ADK: ['Análise com Gemini', 'var(--ok)'],
+        SIMULATED: ['Modo demonstração', '#D4A017'],
+        SIMULATED_FALLBACK: ['Modo demonstração: a análise com Gemini falhou', 'var(--risk)'],
+      };
+      const [label, dot] = modes[r.execution_mode] || modes.SIMULATED;
+      el.textContent = label;
+      el.style.setProperty('--dot', dot);
+      el.title = r.execution_detail || 'Relatório gerado pelos agentes ADK com Gemini.';
+      el.classList.remove('hidden');
+    }
+
+    // ---------- Documento ----------
+    // Marca na margem as cláusulas citadas pelos riscos (mesma página e mesmo número de cláusula)
+    function findFlag(chunk, findings) {
+      // Casa pelo subitem exato ("11.1") no texto ou pela cláusula inteira ("CLÁUSULA 11") no título da seção
+      for (let i = 0; i < findings.length; i++) {
+        const f = findings[i];
+        if (Number(f.contract_page) !== Number(chunk.page_number)) continue;
+        const num = (String(f.clause_id).match(/\d+(\.\d+)?/) || [])[0];
+        if (!num) continue;
+        const major = num.split('.')[0];
+        const exact = new RegExp(`(^|[^\\d.])${num.replace('.', '\\.')}(\\D|$)`).test(chunk.text || '');
+        const section = new RegExp(`CL[ÁA]USULA\\s+${major}(\\D|$)`, 'i').test(chunk.section_id || '');
+        if (exact || section) return { index: i, tone: severityTone(f.severity) };
+      }
+      return null;
+    }
+
+    function renderDocument(r) {
+      const findings = r.legal_review.high_risk_findings || [];
+      const pages = {};
+      (r.contract_pages_indexed || []).forEach(c => (pages[c.page_number] ||= []).push(c));
+      const nums = Object.keys(pages).map(Number).sort((a, b) => a - b);
+
+      document.getElementById('page-pills').innerHTML = nums.map(n => `<button onclick="goToPage(${n})">Página ${n}</button>`).join('');
+      document.getElementById('doc').innerHTML = nums.map(n => `
+        <section class="doc-page" id="doc-page-${n}">
+          <div class="doc-page-label">Página ${n}</div>
+          ${pages[n].map(c => {
+            const flag = findFlag(c, findings);
+            const attrs = flag ? `data-flag="${flag.tone}" data-risk="${flag.index}"` : '';
+            const title = plain(c.section_id || '');
+            let body = plain(c.text).replace(/^#+\s*/, '');
+            // O texto do chunk costuma repetir o título da seção; mostra o título uma vez só
+            if (title && body.toUpperCase().startsWith(title.toUpperCase())) body = body.slice(title.length).trim();
+            const section = title && !/^Pre[âa]mbulo/i.test(title) ? `<span class="section">${esc(title)}</span>` : '';
+            return `<p class="clause" ${attrs}>${section}${esc(body)}</p>`;
+          }).join('')}
+        </section>`).join('');
+    }
+
+    function goToPage(n, riskIndex = null) {
+      if (document.getElementById('view-contract').classList.contains('hidden')) return;
+      switchContractTab('analysis');
+      if (window.innerWidth < 1024) setMobilePane('doc');
+      const target = (riskIndex !== null && document.querySelector(`.clause[data-risk="${riskIndex}"]`)) || document.getElementById(`doc-page-${n}`);
+      if (!target) return;
+      const doc = document.getElementById('doc');
+      if (window.innerWidth >= 1024) doc.scrollTo({ top: target.offsetTop - doc.offsetTop - 16, behavior: reduceMotion ? 'auto' : 'smooth' });
+      else target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+      document.querySelectorAll('.clause.focus').forEach(el => el.classList.remove('focus'));
+      if (target.classList.contains('clause')) target.classList.add('focus');
+    }
+
+    // ---------- Veredito ----------
+    function verdictFor(r) {
+      const s = r.compliance.compliance_score;
+      if (s >= 80) return { title: 'Pronto para assinar', tone: 'ok' };
+      if (r.legal_review.overall_risk_level === 'CRÍTICO' || s < 50) return { title: 'Não assinar sem ajustes', tone: 'risk' };
+      return { title: 'Assinar após ajustes', tone: 'warn' };
+    }
+
+    function renderVerdict(r) {
+      const m = r.metadata;
+      const score = r.compliance.compliance_score;
+      const v = verdictFor(r);
+      const title = document.getElementById('verdict-title');
+      title.textContent = v.title;
+      title.style.color = v.tone === 'ok' ? 'var(--ok)' : v.tone === 'warn' ? 'var(--warn)' : 'var(--risk)';
+      document.getElementById('legal-opinion').innerHTML = richText(r.legal_review.executive_legal_opinion);
+
+      const bar = document.getElementById('score-bar');
+      bar.style.background = v.tone === 'ok' ? 'var(--ok)' : v.tone === 'warn' ? 'var(--amber)' : 'var(--risk)';
+      bar.style.width = '0';
+      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = `${Math.max(3, score)}%`; }));
+      countUp(document.getElementById('score-value'), score, false, 1100);
+
+      const value = annualMoney(m.contract_value);
+      const savings = money(r.insights.potential_annual_savings);
+      document.getElementById('facts').innerHTML = `
+        <div><p class="text-[13px]" style="color: var(--muted)">Valor por ano</p><p class="text-[15px] font-medium mt-0.5 tabular" title="${esc(plain(m.contract_value))}">${esc(value)}</p>${m.value_page ? pageBtn(m.value_page) : ''}</div>
+        <div><p class="text-[13px]" style="color: var(--muted)">Vigência</p><p class="text-[15px] font-medium mt-0.5">${esc(term(m.duration))}</p></div>
+        <div><p class="text-[13px]" style="color: var(--muted)">Economia por ano</p><p class="text-[15px] font-medium mt-0.5 tabular" style="color: var(--ok)">${esc(savings)}</p></div>`;
+
+      // Riscos
+      const findings = r.legal_review.high_risk_findings || [];
+      document.getElementById('risks-count').textContent = findings.length;
+      document.getElementById('risks-list').innerHTML = findings.length === 0 ? `
+        <div class="empty-ok"><i data-lucide="circle-check"></i>
+          <p class="text-[15px] font-medium">Nenhuma cláusula bloqueia a assinatura</p>
+          <p class="text-[14px] mt-1" style="color: var(--muted)">Todas as cláusulas analisadas seguem as políticas da empresa.</p>
+        </div>` : findings.map((f, i) => {
+        const tone = severityTone(f.severity);
+        return `
+          <div class="risk" id="risk-${i}" data-open="false">
+            <button aria-expanded="false" aria-controls="risk-body-${i}" onclick="toggleRisk(${i})">
+              <span class="dot" style="background: ${tone === 'warn' ? 'var(--amber)' : 'var(--risk)'}"></span>
+              <span class="flex-1 min-w-0">
+                <span class="block text-[15px] font-medium">${esc(plain(f.risk_category))}</span>
+                <span class="block text-[13px]" style="color: var(--muted)">Página ${Number(f.contract_page)}, ${esc(plain(f.clause_id).toLowerCase())}</span>
+              </span>
+              <i data-lucide="chevron-right" class="chev"></i>
+            </button>
+            <div class="body" id="risk-body-${i}"><div>
+              <div class="redline-box">
+                <p class="label">Texto atual</p>
+                <p class="now"><span class="strike">${esc(plain(f.problematic_excerpt).replace(/^P[áa]gina \d+,?\s*Cl[áa]usula [\d.\/]+:\s*/i, '').replace(/^['"]|['"]$/g, ''))}</span></p>
+                <p class="label">Redação sugerida</p>
+                <p class="new">${esc(plain(f.suggested_redline))}</p>
+                ${f.legal_analysis ? `<p class="label">Por que mudar</p><p class="why">${esc(plain(f.legal_analysis))}</p>` : ''}
+                ${f.rag_redline_source ? `<p class="src"><i data-lucide="book-open"></i>${esc(plain(f.rag_redline_source))}</p>` : ''}
+              </div>
+            </div></div>
+          </div>`;
+      }).join('');
+
+      // Políticas
+      const issues = r.compliance.issues || [];
+      document.getElementById('policies-count').textContent = issues.length;
+      const icon = st => st === 'CONFORME'
+        ? '<i data-lucide="circle-check" style="color: var(--ok)"></i>'
+        : st === 'ALERTA' ? '<i data-lucide="circle-alert" style="color: var(--warn)"></i>'
+        : '<i data-lucide="circle-x" style="color: var(--risk)"></i>';
+      document.getElementById('policies-list').innerHTML = issues.map(p => `
+        <div class="policy">
+          ${icon(p.status)}
+          <div class="min-w-0">
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-[15px] font-medium">${esc(plain(p.category))}</p>
+              ${p.contract_page ? pageBtn(p.contract_page) : ''}
+            </div>
+            <p class="text-[14px] mt-1 leading-relaxed" style="color: var(--ink-2)">${esc(plain(p.evaluated_clause))}</p>
+            ${p.status !== 'CONFORME' && p.suggested_action ? `<p class="text-[14px] mt-2 leading-relaxed"><span style="color: var(--muted)">Ação: </span>${esc(plain(p.suggested_action))}</p>` : ''}
+          </div>
+        </div>`).join('');
+      switchVerdictTab('risks');
+    }
+
+    function toggleRisk(i) {
+      const el = document.getElementById(`risk-${i}`);
+      const open = el.dataset.open !== 'true';
+      el.dataset.open = String(open);
+      el.querySelector('button').setAttribute('aria-expanded', String(open));
+      if (open) {
+        const f = CURRENT_REPORT.legal_review.high_risk_findings[i];
+        if (window.innerWidth >= 1024) goToPage(f.contract_page, i);
+      }
+    }
+
+    // ---------- Negociação ----------
+    function renderNegotiation(r) {
+      const ins = r.insights;
+      document.getElementById('neg-savings').textContent = money(ins.potential_annual_savings);
+      const over = /SOBRE/i.test(ins.financial_benchmark_status || '');
+      const bench = document.getElementById('neg-bench');
+      bench.textContent = over ? 'Acima do preço de referência' : 'Dentro do preço de referência';
+      bench.dataset.tone = over ? 'warn' : 'ok';
+      document.getElementById('neg-financial').innerHTML = richText(ins.financial_insight_details);
+      document.getElementById('neg-summary').innerHTML = richText(ins.assistant_summary);
+      const levers = ins.negotiation_leverages || [];
+      document.getElementById('neg-levers').innerHTML = levers.length === 0 ? `
+        <div class="card empty-ok"><i data-lucide="circle-check"></i>
+          <p class="text-[15px] font-medium">Nada a negociar</p>
+          <p class="text-[14px] mt-1" style="color: var(--muted)">Preço e condições estão alinhados ao histórico de compras.</p>
+        </div>` : levers.map(l => `
+        <article class="card p-6">
+          <div class="flex items-start justify-between gap-4">
+            <h3 class="text-[17px] font-medium">${esc(plain(l.topic))}</h3>
+            ${l.contract_page ? pageBtn(l.contract_page) : ''}
+          </div>
+          <p class="text-[14px] mt-3" style="color: var(--muted)">Hoje no contrato</p>
+          <p class="serif text-[15px] leading-relaxed mt-0.5">${esc(plain(l.current_contract_term))}</p>
+          <p class="text-[14px] mt-4" style="color: var(--muted)">Contraproposta</p>
+          <p class="text-[15px] leading-relaxed mt-0.5" style="color: var(--ink-2)">${esc(plain(l.recommended_tradeoff))}</p>
+          <div class="flex flex-wrap items-center justify-between gap-2 mt-5 pt-4 border-t text-[13px]" style="border-color: var(--line)">
+            <span style="color: var(--muted)">${esc(plain(l.historical_benchmark_rag))}</span>
+            <span class="font-medium" style="color: var(--ok)">${esc(plain(l.estimated_financial_impact))}</span>
+          </div>
+        </article>`).join('');
+    }
+
+    // ---------- Detalhes técnicos ----------
+    function renderDrawer(r) {
+      const f = r.finops;
+      const meta = r.vector_db_meta || {};
+      const modeText = { LIVE_ADK: 'Agentes ADK com Gemini', SIMULATED: 'Demonstração (sem credenciais)', SIMULATED_FALLBACK: 'Demonstração (falha no modo real)' }[r.execution_mode] || r.execution_mode;
+      const tiers = [
+        ['Extração de metadados e páginas', f.tier1_model, f.tier1_latency_sec, true],
+        ['Comparação com as políticas (RAG)', f.tier2_model, f.tier2_latency_sec, true],
+        ['Parecer jurídico e redações', f.tier3_model, f.tier3_latency_sec, f.pro_was_invoked],
+      ];
+      document.getElementById('drawer-body').innerHTML = `
+        <section>
+          <h3 class="text-[15px] font-medium mb-3">Execução</h3>
+          <dl class="kv"><dt>Modo</dt><dd>${esc(modeText)}</dd></dl>
+          ${r.execution_detail ? `<p class="text-[13px] mt-2" style="color: var(--muted)">${esc(r.execution_detail)}</p>` : ''}
+        </section>
+        <section>
+          <h3 class="text-[15px] font-medium mb-3">Modelos por etapa</h3>
+          <div class="space-y-3">${tiers.map(([label, model, lat, used]) => `
+            <div class="flex items-center justify-between gap-4 text-[14px] ${used ? '' : 'opacity-50'}">
+              <div class="min-w-0"><p>${esc(label)}</p><p class="code mt-0.5" style="color: var(--muted)">${esc(model)}</p></div>
+              <span class="tabular shrink-0" style="color: var(--ink-2)">${used ? `${Number(lat).toFixed(2)} s` : 'não acionado'}</span>
+            </div>`).join('')}
+          </div>
+        </section>
+        <section>
+          <h3 class="text-[15px] font-medium mb-3">Custo estimado</h3>
+          <dl class="kv">
+            <dt>Com roteamento por complexidade</dt><dd class="tabular">US$ ${Number(f.estimated_cost_usd_routed).toFixed(5)}</dd>
+            <dt>Tudo no modelo mais caro</dt><dd class="tabular">US$ ${Number(f.estimated_cost_usd_all_pro).toFixed(5)}</dd>
+            <dt>Economia</dt><dd class="tabular" style="color: var(--ok)">${Number(f.estimated_cost_savings_pct).toFixed(1)}%</dd>
+            <dt>Tokens estimados</dt><dd class="tabular">${Number(f.total_tokens_estimated).toLocaleString('pt-BR')}</dd>
+          </dl>
+        </section>
+        ${(r.compliance.escalation_reasons || []).length ? `
+        <section>
+          <h3 class="text-[15px] font-medium mb-3">Motivos da escalada</h3>
+          <ul class="space-y-2 text-[14px] list-disc pl-5" style="color: var(--ink-2)">${r.compliance.escalation_reasons.map(x => `<li>${esc(plain(x))}</li>`).join('')}</ul>
+        </section>` : ''}
+        <section>
+          <h3 class="text-[15px] font-medium mb-3">Banco vetorial</h3>
+          <dl class="kv">
+            <dt>Conexão</dt><dd>${meta.live_pg_connection ? `AlloyDB (${esc(meta.alloydb_instance)})` : 'Índice em memória'}</dd>
+          </dl>
+          <form class="search mt-4" onsubmit="event.preventDefault(); ragSearch()">
+            <i data-lucide="search"></i>
+            <input id="rag-input" type="search" placeholder="Testar busca: multa, LGPD, foro" aria-label="Testar busca no banco vetorial">
+          </form>
+          <div id="rag-results" class="mt-4 space-y-3"></div>
+        </section>`;
+      renderRagResults(r.rag_chunks_used || [], 'Trechos usados nesta análise');
+    }
+
+    function renderRagResults(chunks, heading) {
+      const box = document.getElementById('rag-results');
+      if (!box) return;
+      box.innerHTML = `<p class="text-[13px]" style="color: var(--muted)">${esc(heading)}</p>` + chunks.map(c => `
+        <div class="rounded-lg border p-3" style="border-color: var(--line)">
+          <div class="flex items-center justify-between gap-3 text-[13px]">
+            <span class="code truncate" style="color: var(--ink-2)">${esc(c.source_document)}</span>
+            <span class="tabular shrink-0" style="color: var(--muted)">pág. ${Number(c.page_number)}, similaridade ${Number(c.similarity_score || 0).toFixed(2)}</span>
+          </div>
+          <p class="text-[13.5px] leading-relaxed mt-1.5" style="color: var(--ink-2)">${esc(plain(c.text).slice(0, 260))}${(c.text || '').length > 260 ? '…' : ''}</p>
+        </div>`).join('');
+    }
+
+    async function ragSearch() {
+      const q = document.getElementById('rag-input').value.trim();
+      if (!q) return;
+      try {
+        const res = await fetch(`/api/rag/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        renderRagResults([...(data.contract_page_results || []), ...(data.kb_results || [])], `Resultados para “${q}”`);
+      } catch (e) {
+        renderRagResults([], `Falha na busca: ${e.message}`);
+      }
+    }
+
+    let LAST_FOCUS = null;
+    function openDrawer() {
+      if (!CURRENT_REPORT) return;
+      LAST_FOCUS = document.activeElement;
+      document.getElementById('scrim').classList.add('show');
+      const d = document.getElementById('drawer');
+      d.classList.add('show');
+      d.inert = false;
+      lucide.createIcons();
+      setTimeout(() => d.querySelector('button')?.focus(), 50);
+    }
+    function closeDrawer() {
+      document.getElementById('scrim').classList.remove('show');
+      const d = document.getElementById('drawer');
+      d.classList.remove('show');
+      d.inert = true;
+      LAST_FOCUS?.focus?.();
+    }
+
+    // ---------- Assistente ----------
+    let CHAT_OPEN = false;
+    function toggleChat(open) {
+      CHAT_OPEN = typeof open === 'boolean' ? open : !CHAT_OPEN;
+      const chat = document.getElementById('chat');
+      chat.classList.toggle('show', CHAT_OPEN);
+      chat.inert = !CHAT_OPEN;
+      document.getElementById('chat-fab').classList.toggle('hide', CHAT_OPEN || !CURRENT_REPORT);
+      if (CHAT_OPEN) {
+        const c = CURRENT_SAMPLE_KEY ? CONTRACTS[CURRENT_SAMPLE_KEY] : null;
+        document.getElementById('chat-context').textContent = c ? `${c.vendor}, ${c.subject}` : (UPLOADED?.name || '');
+        setTimeout(() => document.getElementById('chat-input').focus(), 120);
+      }
+    }
+
+    function resetChat() {
+      const suggestions = [
+        'O que impede a assinatura deste contrato?',
+        'Qual redação devo propor para o maior risco?',
+        'Quanto posso economizar e com quais argumentos?',
+      ];
+      document.getElementById('chat-msgs').innerHTML = `
+        <div class="msg-bot">
+          <p>Pergunte sobre qualquer cláusula. Cada resposta indica a página do contrato e a política usada.</p>
+        </div>
+        <div class="space-y-2" id="chat-suggestions">
+          ${suggestions.map(s => `<button class="suggest" onclick="sendChat(this.textContent)">${esc(s)}</button>`).join('')}
+        </div>`;
+    }
+
+    async function sendChat(preset) {
+      const input = document.getElementById('chat-input');
+      const question = (typeof preset === 'string' ? preset : input.value).trim();
+      if (!question) return;
+      input.value = '';
+      document.getElementById('chat-suggestions')?.remove();
+      const box = document.getElementById('chat-msgs');
+      const send = document.getElementById('chat-send');
+      box.insertAdjacentHTML('beforeend', `<div class="msg-user">${esc(question)}</div>`);
+      box.insertAdjacentHTML('beforeend', `<div class="msg-bot" id="typing"><span class="typing"><span></span><span></span><span></span></span></div>`);
+      box.scrollTop = box.scrollHeight;
+      send.disabled = true;
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, contract_text: document.getElementById('contract-textarea').value }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        document.getElementById('typing')?.remove();
+        const gt = data.guardrail_telemetry || {};
+        if (gt.allowed === false || gt.status === 'BLOCKED') {
+          box.insertAdjacentHTML('beforeend', `<div class="msg-bot"><div class="msg-blocked">${richText(data.answer)}</div></div>`);
+        } else {
+          const source = { LIVE_ADK: `Respondido por ${data.model_used}`, SIMULATED: 'Resposta de demonstração', SIMULATED_FALLBACK: 'Resposta de demonstração: a resposta com Gemini falhou' }[data.execution_mode] || 'Resposta';
+          const checks = `Verificação: ${Math.round((gt.grounding_score ?? 1) * 100)}% das citações conferidas${gt.pii_masked ? ', dados pessoais mascarados' : ''}`;
+          box.insertAdjacentHTML('beforeend', `
+            <div class="msg-bot">
+              <div>${richText(data.answer)}</div>
+              <p class="meta" title="${esc(checks + (data.execution_detail ? '. ' + data.execution_detail : ''))}"><i data-lucide="shield-check"></i>${esc(source)}</p>
+            </div>`);
+        }
+      } catch (e) {
+        document.getElementById('typing')?.remove();
+        box.insertAdjacentHTML('beforeend', `<div class="msg-bot"><div class="msg-blocked">Não foi possível responder: ${esc(e.message)}</div></div>`);
+      } finally {
+        send.disabled = false;
+        lucide.createIcons();
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      const drawer = document.getElementById('drawer');
+      if (e.key === 'Tab' && drawer.classList.contains('show')) {
+        const items = [...drawer.querySelectorAll('button, input, a[href], [tabindex]:not([tabindex="-1"])')].filter(el => el.offsetParent);
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!drawer.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        return;
+      }
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('drawer').classList.contains('show')) closeDrawer();
+      else if (CHAT_OPEN) toggleChat(false);
+    });
+
+    // ------------------------------------------------------------------
+    // Upload de PDF/DOCX (o servidor espera o campo file_base64)
+    // ------------------------------------------------------------------
+    async function handleUpload(event) {
+      const file = event?.target?.files?.[0];
+      if (!file) return;
+      const label = document.getElementById('upload-label');
+      label.textContent = 'Enviando...';
+      try {
+        const b64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => { const r = String(reader.result || ''); resolve(r.slice(r.indexOf(',') + 1)); };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const res = await fetch('/api/upload_document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name, file_base64: b64 }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        const text = data.parsed_document?.extracted_text || '';
+        if (!text) throw new Error('não foi possível extrair texto do arquivo');
+        UPLOADED = { name: file.name, text };
+        delete REPORTS.__upload;
+        if (data.audit_report) REPORTS.__upload = data.audit_report;
+        openContract('__upload');
+      } catch (e) {
+        alert(`Não foi possível analisar ${file.name}: ${e.message}. Envie um PDF ou DOCX com texto selecionável (não digitalizado como imagem).`);
+      } finally {
+        label.textContent = 'Enviar contrato';
+        event.target.value = '';
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Inicialização
+    // ------------------------------------------------------------------
+    async function initApp() {
+      lucide.createIcons();
+      renderStats();
+      renderFilters();
+      renderPortfolio();
+      startRibbon();
+      const total = Object.values(CONTRACTS).reduce((s, c) => s + c.annual, 0);
+      countUp(document.getElementById('live-value'), total, true, 1800);
+      try {
+        const res = await fetch('/api/samples');
+        SAMPLES_CACHE = (await res.json()).samples || {};
+      } catch (e) {
+        console.error('Falha ao carregar contratos de exemplo:', e);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
