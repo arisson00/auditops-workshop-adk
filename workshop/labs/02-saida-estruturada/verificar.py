@@ -95,8 +95,20 @@ print(f"Partes : {' × '.join(extracao.partes)}")
 print(f"Valor  : {extracao.valor_mensal} por mês, {extracao.prazo_meses} meses, foro {extracao.foro}")
 print("Cláusulas, da mais arriscada para a menos:")
 ordem = {"alto": 0, "medio": 1, "baixo": 2}
+# Campos que o participante acrescentou ao schema (seção "Personalize" do README)
+BASE_CLAUSULA = {"titulo", "resumo", "pagina", "risco"}
+BASE_EXTRACAO = {"partes", "objeto", "valor_mensal", "prazo_meses", "renovacao_automatica", "foro", "clausulas"}
+extras_clausula = [n for n in Clausula.model_fields if n not in BASE_CLAUSULA]
+extras_extracao = [n for n in ExtracaoContrato.model_fields if n not in BASE_EXTRACAO]
+
 for c in sorted(extracao.clausulas, key=lambda c: (ordem[c.risco], c.pagina)):
     print(f"  [{c.risco:5}] p.{c.pagina}  {c.titulo}")
+    for nome in extras_clausula:
+        print(f"           {nome}: {getattr(c, nome)}")
+if extras_extracao:
+    print("Campos que você acrescentou:")
+    for nome in extras_extracao:
+        print(f"  {nome}: {getattr(extracao, nome)}")
 altos = sum(c.risco == "alto" for c in extracao.clausulas)
 print("-" * 60)
 print(f"✓ {altos} cláusula(s) de risco alto. Lab 02 concluído!")
