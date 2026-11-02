@@ -33,15 +33,29 @@ except ModuleNotFoundError:
 if equipe.compliance.output_key != "compliance" or equipe.risco.output_key != "risco":
     falhar('TODO 1 pendente: compliance e risco precisam de output_key "compliance" e "risco".')
 analise = getattr(equipe, "analise", None)
-if not isinstance(analise, ParallelAgent) or sorted(a.name for a in analise.sub_agents) != ["compliance", "risco"]:
+if not isinstance(analise, ParallelAgent) or not {"compliance", "risco"} <= {a.name for a in analise.sub_agents}:
     falhar("TODO 2 pendente: monte `analise` como ParallelAgent com compliance e risco.")
+especialistas = analise.sub_agents
 instrucao_parecer = equipe.parecer.instruction
 if "TODO" in instrucao_parecer or "{compliance}" not in instrucao_parecer or "{risco}" not in instrucao_parecer:
     falhar("TODO 3 pendente: as instruções do parecer precisam ler {compliance} e {risco}.")
 raiz = equipe.root_agent
 if not isinstance(raiz, SequentialAgent) or raiz.sub_agents != [equipe.extrator, analise, equipe.parecer]:
     falhar("TODO 4 pendente: root_agent deve ser um SequentialAgent com [extrator, analise, parecer].")
-print("✓ equipe montada: extrator → (compliance ∥ risco) → parecer")
+
+# Especialistas que o participante acrescentou (seção "Monte o seu especialista" do README)
+novos = [e for e in especialistas if e.name not in ("compliance", "risco")]
+chaves = [e.output_key for e in especialistas]
+for e in novos:
+    if not e.output_key:
+        falhar(f'o especialista {e.name} está sem output_key. Acrescente output_key="{e.name}".')
+    if e.output_key in ("extracao", "parecer") or chaves.count(e.output_key) > 1:
+        falhar(f'o output_key "{e.output_key}" do especialista {e.name} já é usado por outro agente. Use outro nome.')
+    if "{" + e.output_key + "}" not in instrucao_parecer:
+        falhar(f"o parecer não lê a análise de {e.name}. Acrescente-o na lista ESPECIALISTAS.")
+    if "{extracao}" not in e.instruction:
+        print(f"! o especialista {e.name} não lê {{extracao}}: ele vai analisar só o que estiver nas instruções dele")
+print(f"✓ equipe montada: extrator → ({' ∥ '.join(e.name for e in especialistas)}) → parecer")
 
 # 2. Auditoria real
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
@@ -74,12 +88,17 @@ try:
 except Exception as erro:  # noqa: BLE001 - mostrar o motivo ao participante é o objetivo aqui
     falhar(f"a chamada ao Gemini falhou: {erro}")
 
-faltando = [k for k in ("extracao", "compliance", "risco", "parecer") if not estado.get(k)]
+faltando = [k for k in ["extracao", *chaves, "parecer"] if not estado.get(k)]
 if faltando:
     falhar(f"o estado da sessão ficou sem: {', '.join(faltando)}. Confira os output_key.")
 print(f"\n✓ estado da sessão: {', '.join(k for k in estado if not k.startswith('_'))}")
 
+for e in novos:
+    print("-" * 60)
+    print(f"Análise do seu especialista ({e.name}):")
+    print(estado[e.output_key].strip())
 print("-" * 60)
+print("Parecer:")
 print(estado["parecer"].strip())
 print("-" * 60)
 

@@ -1,19 +1,21 @@
-"""Lab 04: quatro agentes especialistas auditam um contrato em equipe.
+"""Lab 04: uma equipe de agentes especialistas audita um contrato.
 
     extrator ──► ┌ compliance ┐ ──► parecer
-                 └ risco      ┘
-    (Sequential: um depois do outro; no meio, Parallel: os dois ao mesmo tempo)
+                 │ risco      │
+                 └ (o seu)    ┘
+    (Sequential: um depois do outro; no meio, Parallel: os especialistas ao mesmo tempo)
 
 Cada agente grava a resposta no estado da sessão (output_key), e o próximo lê com {chave}
 nas instruções.
 
-Preencha os TODOs e rode `python ../verificar.py` a partir de starter/.
+A equipe já está pronta. Rode `python ../verificar.py` a partir desta pasta (starter/) para testá-la.
+Depois, monte o seu especialista: veja "MONTE O SEU ESPECIALISTA" mais abaixo.
 """
 
 import os
 from pathlib import Path
 
-from google.adk.agents import Agent, ParallelAgent, SequentialAgent  # noqa: F401 - TODOs 2 e 4
+from google.adk.agents import Agent, ParallelAgent, SequentialAgent
 
 MODELO = os.getenv("MODELO_GEMINI", "gemini-3.8-flash")
 POLITICAS = (Path(__file__).resolve().parents[2] / "politicas_compliance.md").read_text(encoding="utf-8")
@@ -28,10 +30,11 @@ O usuário colou um contrato dividido em páginas (--- [Página X] ---). Liste, 
 partes, valor, prazo e renovação, SLA, dados pessoais, multa de rescisão, responsabilidade e foro.
 Cada tópico termina com a página, ex.: (Página 3). Não opine: só extraia.
 """,
+    # Grava a resposta no estado da sessão; os especialistas leem com {extracao}
     output_key="extracao",
 )
 
-# 2a. Compliance: confere a extração contra as políticas internas
+# 2a. Especialista em compliance: confere a extração contra as políticas internas
 compliance = Agent(
     name="compliance",
     model=MODELO,
@@ -48,10 +51,10 @@ Políticas da empresa:
 Para cada política (POL-LGPD-01, POL-SLA-02, POL-FIN-03, POL-JUR-04), responda em uma linha:
 código da política, CONFORME ou NÃO CONFORME, e o motivo citando a página do contrato.
 """,
-    # TODO 1: grave a resposta no estado da sessão com a chave "compliance" (output_key)
+    output_key="compliance",
 )
 
-# 2b. Risco jurídico: olha a mesma extração com os olhos de um advogado
+# 2b. Especialista em risco jurídico: olha a mesma extração com os olhos de um advogado
 risco = Agent(
     name="risco",
     model=MODELO,
@@ -64,33 +67,61 @@ Para cada um: o risco em uma frase, a página e uma sugestão de redação alter
 Cláusulas extraídas do contrato:
 {extracao}
 """,
-    # TODO 1: grave a resposta no estado da sessão com a chave "risco"
+    output_key="risco",
 )
 
-# Compliance e risco não dependem um do outro: rodam ao mesmo tempo
-# TODO 2: troque o None por um ParallelAgent com nome "analise_paralela" e sub_agents=[compliance, risco]
-analise = None
+# ─── MONTE O SEU ESPECIALISTA ──────────────────────────────────────────────────────────
+# 1. Tire o "# " do começo das linhas do bloco abaixo (ou cole outro especialista do README).
+# 2. Acrescente o nome dele na lista ESPECIALISTAS, logo depois do bloco.
+# Pronto: ele roda em paralelo com os outros e o parecer passa a ler a análise dele.
+#
+# financeiro = Agent(
+#     name="financeiro",
+#     model=MODELO,
+#     description="Avalia o impacto financeiro do contrato para a contratante.",
+#     instruction="""
+# Você é o analista financeiro da contratante. Com base nas cláusulas extraídas abaixo, calcule
+# o custo total do contrato no prazo de vigência e aponte os 3 maiores riscos financeiros
+# (reajuste, multas, custos escondidos), cada um com a página.
+#
+# Cláusulas extraídas do contrato:
+# {extracao}
+# """,
+#     output_key="financeiro",
+# )
+# ───────────────────────────────────────────────────────────────────────────────────────
 
-# 3. Parecer: junta as duas análises numa recomendação para a diretoria
+# A lista de especialistas. Todos rodam ao mesmo tempo: nenhum depende do resultado do outro
+ESPECIALISTAS = [compliance, risco]  # ex.: [compliance, risco, financeiro]
+
+analise = ParallelAgent(
+    name="analise_paralela",
+    sub_agents=ESPECIALISTAS,
+)
+
+# O parecer lê a análise de cada especialista da lista: "{compliance}", "{risco}" e a do seu.
+# Montamos esse trecho a partir da lista, então um especialista novo entra sozinho no parecer
+ANALISES = "\n\n".join(f"Análise de {e.name}:\n{{{e.output_key}}}" for e in ESPECIALISTAS)
+
+# 3. Parecer: junta as análises numa recomendação para a diretoria
 parecer = Agent(
     name="parecer",
     model=MODELO,
     description="Escreve o parecer final para a diretoria.",
     instruction="""
-Você escreve para a diretoria, que tem 1 minuto para ler. Com base nas duas análises abaixo, escreva:
+Você escreve para a diretoria, que tem 1 minuto para ler. Com base nas análises dos especialistas
+abaixo, escreva:
 
 **Recomendação:** ASSINAR, ASSINAR COM AJUSTES ou NÃO ASSINAR SEM AJUSTES, e o motivo em uma frase.
 **O que negociar:** os 3 ajustes mais importantes, cada um com a página.
 
-Análise de compliance:
-TODO 3: troque esta linha por {compliance}, que o ADK substitui pelo valor do estado da sessão
-
-Análise de risco jurídico:
-TODO 3: troque esta linha por {risco}
-""",
+""" + ANALISES,
     output_key="parecer",
 )
 
-# A equipe: extrator, depois as duas análises em paralelo, depois o parecer
-# TODO 4: troque o None por um SequentialAgent com nome "auditoria" e sub_agents=[extrator, analise, parecer]
-root_agent = None
+# A equipe: extrator, depois os especialistas em paralelo, depois o parecer
+root_agent = SequentialAgent(
+    name="auditoria",
+    description="Audita um contrato com uma equipe de agentes especialistas.",
+    sub_agents=[extrator, analise, parecer],
+)
