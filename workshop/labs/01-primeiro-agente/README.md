@@ -80,9 +80,15 @@ Se aparecer uma linha com `✗`, ela diz o que fazer. Veja também a tabela [Tra
 
 ## Passo 4: conversar com o agente no navegador
 
+Ainda na pasta do lab, rode:
+
 ```bash
-adk web --port 8080
+lab web
 ```
+
+O `lab web` sobe a interface do ADK (`adk web`) já liberada para a Visualização da Web do Cloud Shell.
+
+> Na primeira vez, o ADK pergunta `Enable telemetry? [Y/n]`. Responda `n` ou `y` e aperte Enter; a escolha não muda nada no lab.
 
 1. No Cloud Shell, clique em **Visualização da Web** > **Visualizar na porta 8080**.
 2. No canto superior esquerdo, escolha o app **resumidor**.
@@ -135,6 +141,8 @@ Quer voltar ao original? Rode `git checkout resumidor/agent.py`.
 | `404` ou `Publisher Model ... not found` | Rode `lab 01` de novo: ele refaz o `.env` com `GOOGLE_CLOUD_LOCATION=global`, o endpoint onde os modelos Gemini 3.x existem. |
 | `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou a sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |
 | `429` / `RESOURCE_EXHAUSTED` | Cota momentânea. Espere 1 minuto e tente de novo. |
+| A página do `adk web` fica em branco, e o terminal mostra `403 Forbidden` nos arquivos `.js` | Você rodou `adk web` direto. Pare com `Ctrl+C` e use `lab web`, que libera o endereço da Visualização da Web. |
+| `address already in use` ao rodar `lab web` | Já existe um `adk web` aberto em outro terminal. Pare-o com `Ctrl+C` ou feche aquele terminal. |
 
 ## Próximo lab
 

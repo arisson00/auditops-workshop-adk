@@ -71,7 +71,7 @@ Repare nas últimas linhas do `verificar.py`: ordenar e contar as cláusulas é 
 ## Passo 5: ver no navegador
 
 ```bash
-adk web --port 8080
+lab web
 ```
 
 Abra pela **Visualização da Web** (porta 8080), escolha o app **extrator** e cole o contrato. A resposta agora chega como JSON. Clique nela e procure a aba de estado (**State**): a mesma resposta aparece guardada na chave `extracao`.

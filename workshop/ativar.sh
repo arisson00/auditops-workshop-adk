@@ -5,6 +5,7 @@
 #     lab 01            entra no starter do Lab 01, com o ambiente e o projeto GCP prontos
 #     lab 01 solucao    entra na solução do Lab 01
 #     lab 07            vai para a raiz do repositório (deploy)
+#     lab web           abre a interface do ADK (adk web) para o lab da pasta atual
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   echo "Use com source, não com bash:  source ${0}"
@@ -22,7 +23,7 @@ _auditops_projeto() {
 lab() {
   local numero="${1:-}" pasta="${2:-starter}" projeto destino pacote
   if [ -z "$numero" ]; then
-    echo "Uso: lab <número> [solucao]     ex.: lab 01   |   lab 03 solucao"
+    echo "Uso: lab <número> [solucao]   |   lab web     ex.: lab 01   |   lab 03 solucao"
     ls -1 "$AUDITOPS_WORKSHOP/labs"
     return 1
   fi
@@ -31,6 +32,18 @@ lab() {
     return 1
   fi
   source "$AUDITOPS_WORKSHOP/.venv/bin/activate"
+  if [ "$numero" = "web" ]; then
+    if ! ls */agent.py >/dev/null 2>&1; then
+      echo "✗ nenhum agente nesta pasta. Entre no lab antes, ex.: lab 01"
+      return 1
+    fi
+    # A Visualização da Web do Cloud Shell abre a página em https://8080-....cloudshell.dev.
+    # O adk web só aceita a própria máquina como origem; sem liberar o Cloud Shell, os
+    # arquivos .js da interface voltam 403 e a página fica em branco
+    echo "→ abra pela Visualização da Web do Cloud Shell, porta 8080. Para parar: Ctrl+C"
+    adk web --port 8080 --allow_origins 'regex:https://.*\.cloudshell\.dev'
+    return
+  fi
   if [ "$numero" = "07" ] || [ "$numero" = "7" ]; then
     cd "$AUDITOPS_WORKSHOP/.." && echo "✓ raiz do repositório: $(pwd)"
     return

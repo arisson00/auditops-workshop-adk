@@ -82,7 +82,7 @@ As consultas e o número de buscas mudam a cada execução.
 ## Passo 6: ver no navegador
 
 ```bash
-adk web --port 8080
+lab web
 ```
 
 Abra pela **Visualização da Web** (porta 8080) e escolha o app **assistente**. Faça perguntas, como *"Os dados podem sair do Brasil?"* e *"Existe limite de indenização?"*. Na visualização dos eventos, cada chamada a `buscar_no_contrato` aparece com a consulta enviada e os trechos que voltaram.

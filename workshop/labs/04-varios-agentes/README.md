@@ -81,7 +81,7 @@ Os tempos e o texto mudam a cada execução.
 ## Passo 4: ver no navegador
 
 ```bash
-adk web --port 8080
+lab web
 ```
 
 Abra pela **Visualização da Web** (porta 8080), escolha **auditoria** e cole o conteúdo de `contrato_technova.md`. As respostas aparecem uma por agente, e cada evento mostra qual agente o produziu. No estado da sessão aparecem as quatro chaves: `extracao`, `compliance`, `risco` e `parecer`.
