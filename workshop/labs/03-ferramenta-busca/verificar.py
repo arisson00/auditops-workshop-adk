@@ -31,8 +31,10 @@ except ModuleNotFoundError:
 
 # 1. TODOs
 docstring = buscar_no_contrato.__doc__ or ""
-if "TODO" in docstring or len(docstring.strip()) < 40:
+if "TODO" in docstring or not docstring.strip():
     falhar("TODO 1 pendente: escreva a docstring da ferramenta buscar_no_contrato.")
+if len(docstring.strip()) < 40:
+    print("! docstring curta: o Gemini tem pouca informação sobre quando e como usar a ferramenta")
 retorno = buscar_no_contrato("foro")
 trechos = retorno.get("trechos") if isinstance(retorno, dict) else None
 if not trechos:
@@ -79,7 +81,7 @@ CASOS = [
     ("Qual é o telefone do suporte técnico?", None, r"[Nn]ão consta no contrato"),
 ]
 
-for pergunta, pagina, esperado in CASOS:
+def mostrar(pergunta: str) -> tuple[str, list[str]]:
     print(f"\n? {pergunta}")
     try:
         resposta, consultas = asyncio.run(perguntar(pergunta))
@@ -88,6 +90,17 @@ for pergunta, pagina, esperado in CASOS:
     for consulta in consultas:
         print(f'  → buscar_no_contrato(consulta="{consulta}")')
     print(f"  {resposta}")
+    return resposta, consultas
+
+
+# Modo livre: python ../verificar.py "sua pergunta" [...] responde só as suas perguntas, sem gabarito
+if len(sys.argv) > 1:
+    for pergunta in sys.argv[1:]:
+        mostrar(pergunta)
+    sys.exit(0)
+
+for pergunta, pagina, esperado in CASOS:
+    resposta, consultas = mostrar(pergunta)
     if not consultas:
         falhar("o agente respondeu sem usar a ferramenta. Reforce nas regras que ele deve buscar antes.")
     if not re.search(esperado, resposta):

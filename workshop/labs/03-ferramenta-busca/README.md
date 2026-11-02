@@ -24,40 +24,51 @@ lab 03
 ```
 starter/assistente/
 ├── __init__.py
-├── busca.py    ← a busca nas páginas (pronta, só leia)
-└── agent.py    ← a ferramenta e o agente (TODOs 1 a 4)
+├── busca.py    ← a busca nas páginas do contrato
+└── agent.py    ← a ferramenta e o agente
 ```
 
-O contrato é o [contrato_technova.md](contrato_technova.md), o mesmo que aparece na demo do AuditOps.
+Os dois arquivos já vêm prontos. O contrato é o [contrato_technova.md](contrato_technova.md), o mesmo que aparece na demo do AuditOps.
 
 ## Passo 2: entender a busca (2 minutos de leitura)
 
-Abra `assistente/busca.py`. Ele faz duas coisas:
+```bash
+cloudshell edit assistente/busca.py
+```
+
+O `busca.py` faz duas coisas:
 
 1. **Indexa:** corta o contrato em trechos, um por cláusula, e cada trecho guarda a sua página.
 2. **Busca:** dá a cada trecho uma nota pelas palavras da consulta que ele contém e devolve os melhores.
 
-É a versão mais simples de busca. Repare em um limite dela: buscar `"cancelar contrato"` não encontra nada, porque o contrato fala em "rescisão". Guarde isso para o passo 5.
+É a versão mais simples de busca. Repare num limite dela: buscar `"cancelar contrato"` não encontra nada, porque o contrato fala em "rescisão". Guarde isso para o passo 4.
 
-## Passo 3: transformar a busca numa ferramenta
+## Passo 3: conhecer a ferramenta e o agente
 
-Abra `assistente/agent.py`. A função `buscar_no_contrato` é a ferramenta.
+```bash
+cloudshell edit assistente/agent.py
+```
 
-1. **TODO 1, a docstring:** escreva o que a ferramenta faz, quando usar e o que é o argumento `consulta`, com um exemplo. Escreva para o Gemini, como faria para um colega novo.
-2. **TODO 2, o retorno:** devolva um dicionário com os trechos, cada um com página e texto. A linha pronta está no comentário.
+| Parte | O que faz |
+|---|---|
+| `def buscar_no_contrato(consulta)` | A **ferramenta**: uma função Python comum, que chama a busca e devolve os trechos com a página |
+| A docstring (texto entre `"""` logo abaixo do `def`) | O "manual" da ferramenta. O Gemini lê esse texto para decidir **quando** chamá-la e **o que** passar em `consulta`. |
+| `tools=[buscar_no_contrato]` | Entrega a ferramenta ao agente. Está marcada com `NOVO NESTE LAB`. |
+| As regras nas instruções | Buscar antes de responder, citar a página e, se não achar, dizer *"Não consta no contrato."* |
 
-## Passo 4: entregar a ferramenta ao agente e escrever as regras
+Repare que ninguém escreveu "chame a busca com tal palavra". O Gemini decide sozinho o que buscar e quantas vezes.
 
-3. **TODO 3:** adicione `tools=[buscar_no_contrato]` ao `Agent`.
-4. **TODO 4:** troque o TODO das instruções pelas regras. O comentário lista o que elas precisam ter. A mais importante é a última: se não achar, responder exatamente *"Não consta no contrato."*
+## Passo 4: testar o agente
 
-## Passo 5: verificar
+No terminal, ainda na pasta do lab, rode:
 
 ```bash
 python ../verificar.py
 ```
 
-O script faz 3 perguntas e mostra **cada chamada que o agente fez à ferramenta**:
+> Mudou de pasta ou abriu outro terminal? Rode `lab 03` antes.
+
+Em uns 30 segundos, o script faz 3 perguntas e mostra **cada chamada que o agente fez à ferramenta**:
 
 ```
 ? Podemos cancelar o contrato antes do prazo? Quanto custa?
@@ -79,19 +90,49 @@ Repare em duas coisas:
 
 As consultas e o número de buscas mudam a cada execução.
 
-## Passo 6: ver no navegador
+## Passo 5: pergunte o que quiser
+
+Passe a sua pergunta entre aspas, e o script responde só ela, mostrando as buscas:
 
 ```bash
-lab web
+python ../verificar.py "Os dados podem sair do Brasil?"
 ```
 
-Abra pela **Visualização da Web** (porta 8080) e escolha o app **assistente**. Faça perguntas, como *"Os dados podem sair do Brasil?"* e *"Existe limite de indenização?"*. Na visualização dos eventos, cada chamada a `buscar_no_contrato` aparece com a consulta enviada e os trechos que voltaram.
+Dá para mandar várias de uma vez:
 
-## Experimente (se sobrar tempo)
+```bash
+python ../verificar.py "Existe limite de indenização?" "Quem paga a arbitragem?" "Qual é o SLA?"
+```
 
-- Apague a docstring da ferramenta (deixe só `"""Busca."""`) e faça as mesmas perguntas. O agente continua usando bem a ferramenta?
-- Mude `quantidade=3` para `quantidade=1` no `agent.py`. As respostas pioram?
-- Pergunte algo que exige juntar duas cláusulas: *"Se a plataforma ficar fora do ar, podemos cancelar sem multa?"* (resposta nas páginas 2 e 4).
+Boas perguntas para testar:
+
+| Pergunta | O que observar |
+|---|---|
+| *"Se a plataforma ficar fora do ar, podemos cancelar sem multa?"* | Precisa juntar duas cláusulas (páginas 2 e 4). O agente faz mais de uma busca? |
+| *"Quanto vamos pagar no total em 3 anos?"* | O agente faz a conta a partir do valor mensal? |
+| *"Esse contrato é bom para nós?"* | Pergunta de opinião: ele busca os riscos ou responde genérico? |
+| *"Qual é a cor do logotipo da TechNova?"* | Fora do contrato: ele diz "Não consta" ou inventa? |
+
+Prefere o navegador? Rode `lab web`, abra o link que aparece e escolha o app **assistente**. Cada chamada a `buscar_no_contrato` aparece nos eventos, com a consulta e os trechos que voltaram.
+
+## Personalize (opcional)
+
+No `assistente/agent.py`, procure as linhas `PERSONALIZE`. Salve com `Ctrl+S` e rode `python ../verificar.py` de novo depois de cada mudança.
+
+| Experimento | O que mudar | O que observar |
+|---|---|---|
+| A docstring importa? | Troque a docstring inteira por `"""Busca."""` | O agente continua escolhendo boas palavras para a consulta? |
+| Quantos trechos? | Mude `quantidade=3` para `1` ou `5` | Com 1, as respostas pioram? Com 5, ficam mais longas? |
+| Sem sinônimos | Apague a frase *"tente de novo com outras palavras-chave"* | A pergunta sobre cancelar ainda funciona? |
+| Mais formal | Acrescente às regras: *"Responda como um parecer jurídico, em tom formal."* | O tom muda sem mudar as páginas citadas? |
+| Resposta em tópicos | Acrescente: *"Responda em tópicos, um por informação, cada um com a página."* | Fica mais fácil de ler? |
+
+Duas regras para o `verificar.py` continuar passando:
+
+- **Mantenha a frase** *"Não consta no contrato."* nas regras. O script confere essa resposta exata.
+- **Mantenha o pedido de citar a página.**
+
+Quer voltar ao original? Rode `git checkout assistente/`.
 
 ## Como isso funciona no AuditOps de verdade
 
@@ -107,12 +148,14 @@ O agente e a ferramenta são os mesmos. Só muda o que está dentro de `buscar()
 
 | O que aparece | O que fazer |
 |---|---|
-| `✗ TODO ... pendente` | Falta aquele TODO no `agent.py`. |
-| `o agente respondeu sem usar a ferramenta` | Confira o TODO 3 e reforce nas regras: "Antes de responder, use a ferramenta buscar_no_contrato". |
+| `lab: command not found` | Prepare o workshop: veja o [README do workshop](../../README.md#antes-de-começar). |
+| `✗ não achei a pasta assistente/` | Você saiu da pasta do lab. Rode `lab 03`. |
+| `✗ TODO 1 pendente: escreva a docstring` | A docstring foi apagada. Escreva ao menos uma frase sobre o que a ferramenta faz, entre `"""` logo abaixo do `def`. |
+| `o agente respondeu sem usar a ferramenta` | Reforce nas regras: *"Antes de responder, use a ferramenta buscar_no_contrato"*. |
 | `a resposta deveria citar a Página ...` | Reforce nas regras que toda informação cita a página. Rode de novo. |
-| `UserWarning: [EXPERIMENTAL] feature ... enabled` no `adk web` | Aviso interno do ADK. Pode ignorar. |
+| `IndentationError` ou `SyntaxError` | Alguma linha ficou desalinhada ou com aspas faltando. Rode `git checkout assistente/` para voltar ao original. |
+| `UserWarning: [EXPERIMENTAL] feature ... enabled` | Aviso interno do ADK. Pode ignorar. |
 | Erros de `404`, `403` ou `429` | Veja a tabela do Lab 01. |
-| Ainda não funciona | A resposta está em `../solucao/assistente/`. |
 
 ## Próximo lab
 
