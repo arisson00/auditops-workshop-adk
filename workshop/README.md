@@ -44,6 +44,7 @@ A partir daí, cada lab começa com um único comando, que funciona de qualquer 
 | `lab 01 solucao` | O mesmo, na pasta da solução |
 | `lab 07` | Vai para a raiz do repositório, para o deploy |
 | `lab web` | Abre a interface do ADK no navegador, para o lab da pasta atual |
+| `lab app` | Abre o AuditOps publicado no lab 07, mesmo quando a organização bloqueia acesso público |
 
 > **Apareceu `nenhum projeto GCP selecionado`?** Rode `gcloud config set project <SEU_PROJECT_ID>` e repita o `source`. O `<SEU_PROJECT_ID>` é o ID do projeto (ex.: `meu-projeto-123456`), que aparece no seletor do topo do console.
 >

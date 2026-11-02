@@ -59,11 +59,20 @@ TechNova (com desvios)   LIVE_ADK     25  CRÍTICO   sim                100s  US
 - `LIVE_ADK` quer dizer que os agentes Gemini rodaram de verdade. Se aparecer outro modo, o motivo é mostrado logo abaixo.
 - O custo é uma **estimativa ilustrativa**, calculada pela aplicação com preços fixos no código. Serve para comparar os dois caminhos, não para orçamento.
 
-> **A sua organização bloqueia acesso público?** O deploy avisa com `o acesso público está bloqueado`. Abra um túnel em outro terminal com `gcloud run services proxy auditops-executive --region us-central1 --port 8080` e rode `python workshop/labs/07-deploy-cloud-run/verificar.py http://localhost:8080`.
+> O `verificar.py` funciona mesmo que o acesso público esteja bloqueado: nesse caso, ele chama a API com o seu login.
 
 ## Passo 4: usar como a diretoria vai usar
 
-Abra a URL no navegador (ou pela **Visualização da Web**, porta 8080, se estiver usando o proxy).
+Rode:
+
+```bash
+lab app
+```
+
+- **Se o app estiver aberto ao público**, o `lab app` mostra o link `https://auditops-executive-....run.app`. Ele funciona em qualquer navegador, até no celular.
+- **Se a sua organização bloqueia acesso público**, abrir esse link mostra `Error: Forbidden`. Nesse caso, o `lab app` abre um túnel autenticado com o seu login e mostra o link da Visualização da Web. Deixe o comando rodando enquanto usa o app; para parar, `Ctrl+C`.
+
+> Se o túnel pedir para instalar um componente (`cloud-run-proxy`), responda `Y`.
 
 1. Clique no contrato **TechNova** e espere de 1 a 2 minutos.
 2. Veja o resultado: a recomendação "Não assinar sem ajustes" e os riscos, cada um com a página do contrato.
@@ -99,6 +108,7 @@ O script lista o que vai apagar e pede que você digite o ID do projeto para con
 | `✗ gemini-... não está disponível` ou `sem cota (429)` no deploy | O app sobe, mas em modo demonstração. Avise o instrutor. |
 | `✗ ... rodou em modo demonstração` no verificar | O motivo aparece na mesma linha. Na maioria das vezes é cota do Pro: espere 1 minuto e rode de novo. |
 | `O deploy falhou; esperando 60s...` | Normal no primeiro deploy, enquanto as permissões propagam. O script tenta de novo sozinho. |
+| `Error: Forbidden` ao abrir o link `...run.app` | A organização não permite serviços abertos ao público. Use `lab app`, que abre o app por um túnel com o seu login. Para liberar de vez, quem administra a organização precisa permitir `allUsers` no projeto (política `iam.allowedPolicyMemberDomains`). |
 | `não achei o serviço auditops-executive` | O deploy não terminou. Role o terminal para cima e veja a etapa que falhou. |
 | `Há muitas auditorias em andamento agora` (HTTP 429) | O app aceita 3 auditorias ao mesmo tempo. Espere 1 minuto. |
 | `ERRO: nenhum projeto GCP definido` | Rode `gcloud config set project <SEU_PROJECT_ID>`. |

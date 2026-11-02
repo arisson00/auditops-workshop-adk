@@ -6,6 +6,7 @@
 #     lab 01 solucao    entra na solução do Lab 01
 #     lab 07            vai para a raiz do repositório (deploy)
 #     lab web           abre a interface do ADK (adk web) para o lab da pasta atual
+#     lab app           abre o AuditOps publicado no Cloud Run (lab 07), mesmo sem acesso público
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   echo "Use com source, não com bash:  source ${0}"
@@ -20,10 +21,41 @@ _auditops_projeto() {
   gcloud config get-value project 2>/dev/null
 }
 
+# Libera a porta 8080 e mostra o link da Visualização da Web do Cloud Shell
+_auditops_preparar_porta() {
+  # Um adk web ou um túnel esquecido (outra aba, ou pausado com Ctrl+Z) prende a porta: encerra antes.
+  # Os padrões miram o processo do ADK, o do gcloud que abre o túnel e o binário do túnel. O "[b]",
+  # "[g]" e "[c]" fazem o padrão não casar com o próprio texto dele, num shell que o contenha
+  local padrao
+  for padrao in "[b]in/adk web --port 8080" "[g]cloud.py run services proxy" "[c]loud-run-proxy"; do
+    if pkill -f "$padrao" 2>/dev/null; then
+      # Um processo pausado com Ctrl+Z só recebe o pedido de encerrar depois de retomado
+      pkill -CONT -f "$padrao" 2>/dev/null
+      echo "→ encerrei um processo antigo que ocupava a porta 8080"
+      sleep 2
+    fi
+  done
+  if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then
+    echo "✗ outro programa está usando a porta 8080. Veja qual com: lsof -i :8080"
+    return 1
+  fi
+  # O endereço 127.0.0.1 é o da máquina do Cloud Shell, não o do seu computador
+  local url
+  url="$(cloudshell get-web-preview-url -p 8080 2>/dev/null)"
+  echo "──────────────────────────────────────────────────────────────────────────"
+  if [ -n "$url" ]; then
+    echo " Abra no navegador:  $url"
+  else
+    echo " No topo do Cloud Shell: Visualização da Web > Visualizar na porta 8080"
+  fi
+  echo " Não use endereços http://127.0.0.1:8080 que aparecerem abaixo. Para parar: Ctrl+C"
+  echo "──────────────────────────────────────────────────────────────────────────"
+}
+
 lab() {
   local numero="${1:-}" pasta="${2:-starter}" projeto destino pacote
   if [ -z "$numero" ]; then
-    echo "Uso: lab <número> [solucao]   |   lab web     ex.: lab 01   |   lab 03 solucao"
+    echo "Uso: lab <número> [solucao]   |   lab web   |   lab app     ex.: lab 01   |   lab 03 solucao"
     ls -1 "$AUDITOPS_WORKSHOP/labs"
     return 1
   fi
@@ -37,33 +69,30 @@ lab() {
       echo "✗ nenhum agente nesta pasta. Entre no lab antes, ex.: lab 01"
       return 1
     fi
+    _auditops_preparar_porta || return 1
     # A Visualização da Web do Cloud Shell abre a página em https://8080-....cloudshell.dev.
     # O adk web só aceita a própria máquina como origem; sem liberar o Cloud Shell, os
     # arquivos .js da interface voltam 403 e a página fica em branco
-    # Um adk web esquecido (outra aba, ou pausado com Ctrl+Z) prende a porta 8080: encerra antes.
-    # O "[b]" faz o padrão casar só com o processo do ADK, nunca com um shell que contenha este texto
-    if pkill -f "[b]in/adk web --port 8080" 2>/dev/null; then
-      # Um processo pausado com Ctrl+Z só recebe o pedido de encerrar depois de retomado
-      pkill -CONT -f "[b]in/adk web --port 8080" 2>/dev/null
-      echo "→ encerrei um adk web que já estava aberto"
-      sleep 2
-    fi
-    if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then
-      echo "✗ outro programa está usando a porta 8080. Veja qual com: lsof -i :8080"
+    adk web --port 8080 --allow_origins 'regex:https://.*\.cloudshell\.dev'
+    return
+  fi
+  if [ "$numero" = "app" ]; then
+    local servico="${SERVICE_NAME:-auditops-executive}" regiao="${GOOGLE_CLOUD_LOCATION:-us-central1}" url_app codigo
+    url_app="$(gcloud run services describe "$servico" --region "$regiao" --format='value(status.url)' 2>/dev/null)"
+    if [ -z "$url_app" ]; then
+      echo "✗ não achei o serviço $servico em $regiao. Faça o deploy antes: lab 07 e depois ./deploy_gcp.sh"
       return 1
     fi
-    # O endereço 127.0.0.1 que o ADK imprime é o da máquina do Cloud Shell, não o do seu computador
-    local url
-    url="$(cloudshell get-web-preview-url -p 8080 2>/dev/null)"
-    echo "──────────────────────────────────────────────────────────────────────────"
-    if [ -n "$url" ]; then
-      echo " Abra no navegador:  $url"
-    else
-      echo " No topo do Cloud Shell: Visualização da Web > Visualizar na porta 8080"
+    codigo="$(curl -s -o /dev/null -w '%{http_code}' "$url_app/" 2>/dev/null)"
+    if [ "$codigo" = "200" ]; then
+      echo "✓ o AuditOps está aberto ao público. Abra direto no navegador: $url_app"
+      return
     fi
-    echo " Não use o http://127.0.0.1:8080 que o ADK mostra abaixo. Para parar: Ctrl+C"
-    echo "──────────────────────────────────────────────────────────────────────────"
-    adk web --port 8080 --allow_origins 'regex:https://.*\.cloudshell\.dev'
+    # Acesso público bloqueado (em geral, política da organização que proíbe allUsers):
+    # o túnel abre o app pela Visualização da Web, autenticado com o seu login do Cloud Shell
+    echo "→ o acesso público ao app está bloqueado (HTTP $codigo). Abrindo um túnel com o seu login..."
+    _auditops_preparar_porta || return 1
+    gcloud run services proxy "$servico" --region "$regiao" --port 8080
     return
   fi
   if [ "$numero" = "07" ] || [ "$numero" = "7" ]; then

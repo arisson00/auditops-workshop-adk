@@ -173,8 +173,9 @@ if [ "$HTTP" = "200" ]; then
 else
   echo " ✓ Deploy concluído, mas o acesso público está bloqueado (HTTP $HTTP)."
   echo "   Provável política da organização que impede serviços abertos. Para abrir pelo Cloud Shell:"
-  echo "     gcloud run services proxy $SERVICE_NAME --region $REGION --port 8080"
-  echo "   e depois clique em 'Visualização da Web' > 'Visualizar na porta 8080'."
+  echo "     lab app        (no workshop; abre um túnel com o seu login e mostra o link)"
+  echo "   ou: gcloud run services proxy $SERVICE_NAME --region $REGION --port 8080"
+  echo "       e depois 'Visualização da Web' > 'Visualizar na porta 8080'."
 fi
 [ "$GEMINI_OK" = "true" ] || echo " ! Modelos Gemini indisponíveis: auditorias em modo demonstração (veja as mensagens acima)."
 echo "=================================================================="
