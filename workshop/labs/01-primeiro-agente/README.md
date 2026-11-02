@@ -30,30 +30,53 @@ A pasta tem este formato, que é o que o ADK espera:
 starter/
 └── resumidor/          ← o nome da pasta é o nome do app no adk web
     ├── __init__.py     ← só importa o agent.py
-    └── agent.py        ← define o root_agent (é aqui que você trabalha)
+    └── agent.py        ← define o agente (já vem pronto)
 ```
 
-## Passo 2: preencher os TODOs
+## Passo 2: conhecer o agente
 
-Abra `resumidor/agent.py` no editor do Cloud Shell (botão **Abrir editor**) e preencha:
+Abra o arquivo no editor do Cloud Shell:
 
-1. **TODO 1, o modelo:** `"gemini-3.8-flash"`.
-2. **TODO 2, a descrição:** uma frase, por exemplo: *"Lê contratos de fornecedores e devolve um resumo executivo com a página de cada ponto."*
-3. **TODO 3, as instruções:** o comentário no arquivo lista o que elas precisam ter. Escreva com as suas palavras.
+```bash
+cloudshell edit resumidor/agent.py
+```
 
-Dica para o TODO 3: escreva como se fosse orientar um analista novo da sua equipe. Diga o que ele vai receber, o formato que você quer de volta e o que ele não pode fazer.
+> Se o comando não abrir nada, clique em **Abrir editor** no topo do Cloud Shell e navegue até `workshop/labs/01-primeiro-agente/starter/resumidor/agent.py`.
 
-## Passo 3: verificar
+O agente já vem pronto. São só quatro peças:
+
+| Peça | No arquivo | O que faz |
+|---|---|---|
+| `name` | `"resumidor_contratos"` | O nome do agente |
+| `model` | `"gemini-3.8-flash"` | O Gemini que responde |
+| `description` | `"Lê contratos de fornecedores..."` | Uma frase sobre o agente, para outros agentes saberem o que ele faz |
+| `instruction` | O texto entre `"""` e `"""` | O "prompt de sistema": o papel, o formato da resposta e as regras |
+
+Repare que as instruções são texto comum, em português. É assim que você "programa" o comportamento do agente.
+
+## Passo 3: testar o agente
+
+No terminal, ainda na pasta do lab, rode:
 
 ```bash
 python ../verificar.py
 ```
 
-O script confere os TODOs e manda o [contrato de exemplo](contrato_exemplo.md) ao seu agente. Se tudo der certo, ele mostra o resumo e termina com:
+> Mudou de pasta ou abriu outro terminal? Rode `lab 01` antes.
+
+Em uns 15 a 20 segundos, o script:
+
+1. confere se o agente está configurado: `✓ agente resumidor_contratos configurado com gemini-3.8-flash`;
+2. manda o [contrato de exemplo](contrato_exemplo.md) para o Gemini e mostra o resumo que voltou;
+3. confere se o resumo cita as páginas do contrato.
+
+Deu certo quando a última linha é:
 
 ```
 ✓ a resposta cita as páginas 1, 2, 3. Lab 01 concluído!
 ```
+
+Se aparecer uma linha com `✗`, ela diz o que fazer. Veja também a tabela [Travou?](#travou) no fim desta página.
 
 ## Passo 4: conversar com o agente no navegador
 
@@ -63,30 +86,55 @@ adk web --port 8080
 
 1. No Cloud Shell, clique em **Visualização da Web** > **Visualizar na porta 8080**.
 2. No canto superior esquerdo, escolha o app **resumidor**.
-3. Cole o conteúdo de `contrato_exemplo.md` no chat e envie.
-4. Clique na resposta e abra a aba **Events** (ou **Trace**). Ali aparece exatamente o que foi enviado ao Gemini, incluindo as suas instruções, e quanto tempo levou.
+3. Abra o `contrato_exemplo.md`, copie todo o texto, cole no chat e envie.
+4. Clique na resposta e abra a aba **Events** (ou **Trace**). Ali aparece exatamente o que foi enviado ao Gemini, incluindo as instruções, e quanto tempo levou.
 
 Para parar o servidor, use `Ctrl+C` no terminal.
 
-## Experimente (se sobrar tempo)
+## Personalize as instruções (opcional)
 
-Mude as instruções, salve o arquivo e mande o contrato de novo. O `adk web` recarrega o agente sozinho.
+O jeito mais rápido de entender um agente é mudar as instruções e ver a resposta mudar.
 
-- Peça para classificar cada ponto de atenção como **alto**, **médio** ou **baixo** risco.
-- Peça a resposta em espanhol ou em inglês.
-- Faça uma pergunta que não tem resposta no contrato (*"Qual é o CNPJ da contratada?"*). Ele responde "não informado" ou inventa? Se inventar, reforce a regra nas instruções.
-- Troque o modelo para `gemini-3.1-pro-preview` e compare a resposta e o tempo.
+1. No `resumidor/agent.py`, edite o texto entre `"""` e `"""` do `instruction`.
+2. Salve com `Ctrl+S`.
+3. Rode `python ../verificar.py` de novo. Se o `adk web` estiver aberto, basta mandar o contrato outra vez: ele recarrega o agente sozinho.
+
+Ideias prontas para colar no fim das instruções, antes das `"""` finais:
+
+| Para… | Acrescente |
+|---|---|
+| Classificar o risco | `- Classifique cada ponto de atenção como risco ALTO, MÉDIO ou BAIXO.` |
+| Escrever para a diretoria | `- Escreva para a diretoria: frases curtas, sem juridiquês, no máximo 10 linhas.` |
+| Sugerir o que negociar | `- Para cada ponto de atenção, sugira em uma frase como renegociá-lo.` |
+| Responder em outro idioma | `- Responda em espanhol.` |
+| Dar uma recomendação final | `- Termine com uma recomendação: ASSINAR, ASSINAR COM AJUSTES ou NÃO ASSINAR.` |
+
+Também dá para trocar o papel inteiro, por exemplo: *"Você é o advogado da empresa contratada"*. Compare como a mesma cláusula vira risco ou vantagem conforme o ponto de vista.
+
+Duas regras para o `verificar.py` continuar passando:
+
+- **Mantenha o pedido de citar a página**, por exemplo `(Página 2)`. É o que o script confere.
+- **Não apague as `"""`** do começo e do fim do texto.
+
+Para outros testes:
+
+- Pergunte algo que não está no contrato (*"Qual é o CNPJ da contratada?"*). Ele responde "não informado" ou inventa? Se inventar, reforce a regra nas instruções.
+- Troque o modelo para `"gemini-3.1-pro-preview"` e compare a resposta e o tempo.
+
+Quer voltar ao original? Rode `git checkout resumidor/agent.py`.
 
 ## Travou?
 
 | O que aparece | O que fazer |
 |---|---|
+| `lab: command not found` | Prepare o workshop: veja o [README do workshop](../../README.md#antes-de-começar). |
 | `✗ não achei a pasta resumidor/` | Você saiu da pasta do lab. Rode `lab 01`. |
-| `✗ TODO ... pendente` | Falta preencher aquele TODO no `agent.py`. |
+| `SyntaxError` | Faltou ou sobrou uma `"""` nas instruções. Rode `git checkout resumidor/agent.py` para voltar ao original. |
+| `as instruções não falam em página` | A sua personalização tirou o pedido de citar a página. Acrescente de volta, ex.: *"cite a página, ex.: (Página 2)"*. |
+| `a resposta deveria citar pelo menos 2 páginas` | O Gemini não citou as páginas desta vez. Reforce isso nas instruções e rode de novo. |
 | `404` ou `Publisher Model ... not found` | Rode `lab 01` de novo: ele refaz o `.env` com `GOOGLE_CLOUD_LOCATION=global`, o endpoint onde os modelos Gemini 3.x existem. |
-| `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |
+| `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou a sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |
 | `429` / `RESOURCE_EXHAUSTED` | Cota momentânea. Espere 1 minuto e tente de novo. |
-| Ainda não funciona | A resposta completa está em `../solucao/resumidor/agent.py`. Rode `lab 01 solucao` e siga a partir do passo 3. |
 
 ## Próximo lab
 
