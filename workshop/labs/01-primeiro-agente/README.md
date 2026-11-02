@@ -90,7 +90,9 @@ O `lab web` sobe a interface do ADK (`adk web`) já liberada para a Visualizaç�
 
 > Na primeira vez, o ADK pergunta `Enable telemetry? [Y/n]`. Responda `n` ou `y` e aperte Enter; a escolha não muda nada no lab.
 
-1. No Cloud Shell, clique em **Visualização da Web** > **Visualizar na porta 8080**.
+1. Abra o link que o `lab web` mostra entre as duas linhas, que termina em `cloudshell.dev`. Se não aparecer link, clique no topo do Cloud Shell em **Visualização da Web** > **Visualizar na porta 8080**.
+
+   **Não clique no `http://127.0.0.1:8080`** que o ADK escreve logo abaixo: esse é o endereço da máquina do Cloud Shell, e no seu navegador ele não abre nada.
 2. No canto superior esquerdo, escolha o app **resumidor**.
 3. Abra o `contrato_exemplo.md`, copie todo o texto, cole no chat e envie.
 4. Clique na resposta e abra a aba **Events** (ou **Trace**). Ali aparece exatamente o que foi enviado ao Gemini, incluindo as instruções, e quanto tempo levou.
@@ -142,6 +144,7 @@ Quer voltar ao original? Rode `git checkout resumidor/agent.py`.
 | `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou a sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |
 | `429` / `RESOURCE_EXHAUSTED` | Cota momentânea. Espere 1 minuto e tente de novo. |
 | A página do `adk web` fica em branco, e o terminal mostra `403 Forbidden` nos arquivos `.js` | Você rodou `adk web` direto. Pare com `Ctrl+C` e use `lab web`, que libera o endereço da Visualização da Web. |
+| O navegador não abre nada em `http://127.0.0.1:8080` | Esse endereço só existe dentro do Cloud Shell. Use o link `...cloudshell.dev` que o `lab web` mostra, ou **Visualização da Web** > **Visualizar na porta 8080**. |
 | `address already in use` | Um `adk web` antigo ainda está aberto (em outra aba ou pausado com `Ctrl+Z`). Rode `lab web`: ele encerra o antigo sozinho. Se avisar que **outro programa** usa a porta, veja qual com `lsof -i :8080`. |
 
 ## Próximo lab

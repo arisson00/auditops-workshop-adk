@@ -52,7 +52,17 @@ lab() {
       echo "✗ outro programa está usando a porta 8080. Veja qual com: lsof -i :8080"
       return 1
     fi
-    echo "→ abra pela Visualização da Web do Cloud Shell, porta 8080. Para parar: Ctrl+C"
+    # O endereço 127.0.0.1 que o ADK imprime é o da máquina do Cloud Shell, não o do seu computador
+    local url
+    url="$(cloudshell get-web-preview-url -p 8080 2>/dev/null)"
+    echo "──────────────────────────────────────────────────────────────────────────"
+    if [ -n "$url" ]; then
+      echo " Abra no navegador:  $url"
+    else
+      echo " No topo do Cloud Shell: Visualização da Web > Visualizar na porta 8080"
+    fi
+    echo " Não use o http://127.0.0.1:8080 que o ADK mostra abaixo. Para parar: Ctrl+C"
+    echo "──────────────────────────────────────────────────────────────────────────"
     adk web --port 8080 --allow_origins 'regex:https://.*\.cloudshell\.dev'
     return
   fi
