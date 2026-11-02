@@ -49,7 +49,7 @@ print("✓ regra testada: com desvio → Pro, sem desvio → Flash")
 
 # 2. Dois contratos reais
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
-    falhar("GOOGLE_CLOUD_PROJECT não definido: crie o arquivo cascata/.env (passo 1 do README).")
+    falhar("GOOGLE_CLOUD_PROJECT não definido: rode `lab 05` para criar o .env com o seu projeto GCP.")
 
 
 async def auditar(texto: str) -> dict:

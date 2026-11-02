@@ -40,7 +40,7 @@ print(f"✓ agente {root_agent.name} configurado com {root_agent.model}")
 
 # 2. Chamada real ao Gemini
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
-    falhar("GOOGLE_CLOUD_PROJECT não definido: crie o arquivo resumidor/.env (passo 2 do README).")
+    falhar("GOOGLE_CLOUD_PROJECT não definido: rode `lab 01` para criar o .env com o seu projeto GCP.")
 
 
 async def perguntar(texto: str) -> str:

@@ -15,16 +15,10 @@ Nos labs 01 e 02 o contrato inteiro ia junto na mensagem. Isso funciona com 3 pÃ
 | `tools=[...]` | A lista de ferramentas que o agente pode usar. |
 | RAG | Buscar primeiro, responder depois, sÃ³ com o que foi encontrado, e citar a fonte. |
 
-## Passo 1: entrar na pasta e configurar o projeto
+## Passo 1: entrar no lab
 
 ```bash
-source ~/auditops-workshop-adk/workshop/ativar.sh
-cd ~/auditops-workshop-adk/workshop/labs/03-ferramenta-busca/starter
-cat > assistente/.env <<EOF
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
-GOOGLE_CLOUD_LOCATION=global
-EOF
+lab 03
 ```
 
 ```

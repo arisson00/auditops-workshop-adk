@@ -19,16 +19,10 @@ O Pro raciocina melhor sobre casos difíceis, mas é mais caro e mais lento. Man
               grava {compliance}     lê {compliance}   └─ está limpo? ─► parecer no Flash
 ```
 
-## Passo 1: entrar na pasta e configurar o projeto
+## Passo 1: entrar no lab
 
 ```bash
-source ~/auditops-workshop-adk/workshop/ativar.sh
-cd ~/auditops-workshop-adk/workshop/labs/05-cascata-flash-pro/starter
-cat > cascata/.env <<EOF
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
-GOOGLE_CLOUD_LOCATION=global
-EOF
+lab 05
 ```
 
 Abra `cascata/agent.py`. Repare que o `compliance` usa **saída estruturada** (Lab 02): cada política volta com `status` igual a `CONFORME` ou `NAO_CONFORME`. É isso que permite escrever a regra em Python. Com texto livre, a regra teria que adivinhar o que o modelo quis dizer.

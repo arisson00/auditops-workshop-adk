@@ -24,16 +24,10 @@ Um agente que lê documentos de terceiros lê também o que esses terceiros quis
               responde e para aqui       [CPF] e [EMAIL]
 ```
 
-## Passo 1: entrar na pasta e configurar o projeto
+## Passo 1: entrar no lab
 
 ```bash
-source ~/auditops-workshop-adk/workshop/ativar.sh
-cd ~/auditops-workshop-adk/workshop/labs/06-guardrails/starter
-cat > protegido/.env <<EOF
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
-GOOGLE_CLOUD_LOCATION=global
-EOF
+lab 06
 ```
 
 ```

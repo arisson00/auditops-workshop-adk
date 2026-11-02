@@ -22,16 +22,32 @@ No total são cerca de 90 minutos de labs.
 
 Você precisa de um projeto Google Cloud com faturamento ativo. Tudo roda no **Cloud Shell**, sem instalar nada no seu computador.
 
-1. Abra https://console.cloud.google.com, escolha o seu projeto e clique em **Ativar o Cloud Shell** (`>_`).
-2. No terminal:
+1. Abra https://console.cloud.google.com, escolha o seu projeto no seletor do topo e clique em **Ativar o Cloud Shell** (`>_`).
+2. No terminal, cole as duas linhas:
 
 ```bash
-gcloud config set project <SEU_PROJECT_ID>
-gcloud services enable aiplatform.googleapis.com
 git clone https://github.com/arisson00/auditops-workshop-adk.git
-source ~/auditops-workshop-adk/workshop/ativar.sh
+source auditops-workshop-adk/workshop/ativar.sh
 ```
 
-O `ativar.sh` instala o ADK na primeira vez (1 a 2 minutos) e, nas seguintes, só ativa o ambiente. Cada lab começa com essa mesma linha, então não tem problema se o Cloud Shell reiniciar no meio do caminho.
+Na primeira vez, o `ativar.sh` leva de 1 a 2 minutos: instala o Google ADK e ativa a API do Vertex AI no seu projeto. No fim aparece:
+
+```
+✓ workshop pronto no projeto <seu-projeto>. Para começar: lab 01
+```
+
+A partir daí, cada lab começa com um único comando, que funciona de qualquer pasta e mesmo depois de o Cloud Shell reiniciar:
+
+| Comando | O que faz |
+|---|---|
+| `lab 01` | Entra no lab 01, ativa o ambiente e configura o seu projeto GCP |
+| `lab 01 solucao` | O mesmo, na pasta da solução |
+| `lab 07` | Vai para a raiz do repositório, para o deploy |
+
+> **Apareceu `nenhum projeto GCP selecionado`?** Rode `gcloud config set project <SEU_PROJECT_ID>` e repita o `source`. O `<SEU_PROJECT_ID>` é o ID do projeto (ex.: `meu-projeto-123456`), que aparece no seletor do topo do console.
+>
+> **Trocou de projeto ou de conta?** Rode `gcloud config set project <OUTRO_PROJECT_ID>`. O próximo `lab` já usa o projeto novo.
+>
+> **Já tinha clonado antes?** Rode `cd ~/auditops-workshop-adk && git pull && source workshop/ativar.sh`.
 
 Depois, siga para o [Lab 01](labs/01-primeiro-agente/).

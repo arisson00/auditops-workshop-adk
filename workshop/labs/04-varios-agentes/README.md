@@ -25,16 +25,10 @@ A equipe fica assim:
                            {risco}
 ```
 
-## Passo 1: entrar na pasta e configurar o projeto
+## Passo 1: entrar no lab
 
 ```bash
-source ~/auditops-workshop-adk/workshop/ativar.sh
-cd ~/auditops-workshop-adk/workshop/labs/04-varios-agentes/starter
-cat > auditoria/.env <<EOF
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
-GOOGLE_CLOUD_LOCATION=global
-EOF
+lab 04
 ```
 
 Abra `auditoria/agent.py`. Os quatro agentes já estão escritos. Leia as instruções de cada um: repare que o `compliance` e o `risco` leem `{extracao}`, a resposta do extrator. As [políticas de compliance](politicas_compliance.md) da empresa entram nas instruções do `compliance`.

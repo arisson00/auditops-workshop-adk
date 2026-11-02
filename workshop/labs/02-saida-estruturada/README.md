@@ -15,16 +15,10 @@ No Lab 01 o agente respondia em texto livre. Texto é ótimo para uma pessoa ler
 | `Literal` | Limita um campo a valores fixos, ex.: risco só pode ser `alto`, `medio` ou `baixo`. |
 | `output_key` | Guarda a resposta no **estado da sessão**. É por ali que, no Lab 04, um agente passa o resultado para o próximo. |
 
-## Passo 1: entrar na pasta e configurar o projeto
+## Passo 1: entrar no lab
 
 ```bash
-source ~/auditops-workshop-adk/workshop/ativar.sh
-cd ~/auditops-workshop-adk/workshop/labs/02-saida-estruturada/starter
-cat > extrator/.env <<EOF
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
-GOOGLE_CLOUD_LOCATION=global
-EOF
+lab 02
 ```
 
 Desta vez o agente tem dois arquivos:

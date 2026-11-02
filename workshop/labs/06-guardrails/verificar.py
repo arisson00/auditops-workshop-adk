@@ -51,7 +51,7 @@ print("✓ regras testadas: injeção bloqueada, cláusula normal liberada, call
 
 # 2. Três contratos reais
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
-    falhar("GOOGLE_CLOUD_PROJECT não definido: crie o arquivo protegido/.env (passo 1 do README).")
+    falhar("GOOGLE_CLOUD_PROJECT não definido: rode `lab 06` para criar o .env com o seu projeto GCP.")
 
 
 async def analisar(texto: str) -> dict:

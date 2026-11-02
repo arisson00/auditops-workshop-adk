@@ -46,7 +46,7 @@ print(f"✓ agente {root_agent.name} responde no formato ExtracaoContrato")
 
 # 2. Chamada real ao Gemini
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
-    falhar("GOOGLE_CLOUD_PROJECT não definido: crie o arquivo extrator/.env (passo 2 do README).")
+    falhar("GOOGLE_CLOUD_PROJECT não definido: rode `lab 02` para criar o .env com o seu projeto GCP.")
 
 
 async def extrair(texto: str) -> dict:

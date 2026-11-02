@@ -14,14 +14,15 @@
 | `description` | Uma frase sobre o agente. Em sistemas com vários agentes, é o que os outros leem para decidir a quem delegar. |
 | `adk web` | Uma interface no navegador para conversar com o agente e ver cada chamada ao modelo. |
 
-## Passo 1: entrar na pasta do lab
-
-No Cloud Shell, ative o ambiente Python e entre na pasta do lab:
+## Passo 1: entrar no lab
 
 ```bash
-source ~/auditops-workshop-adk/workshop/ativar.sh
-cd ~/auditops-workshop-adk/workshop/labs/01-primeiro-agente/starter
+lab 01
 ```
+
+O comando `lab` entra na pasta do lab, ativa o ambiente Python e cria o arquivo `resumidor/.env` apontando para o seu projeto GCP. O agente chama o Gemini pelo Vertex AI com a sua conta do Cloud Shell, sem chave de API.
+
+> Aparece `lab: command not found`? Você ainda não preparou o workshop: veja o [README do workshop](../../README.md#antes-de-começar).
 
 A pasta tem este formato, que é o que o ADK espera:
 
@@ -32,21 +33,7 @@ starter/
     └── agent.py        ← define o root_agent (é aqui que você trabalha)
 ```
 
-## Passo 2: apontar para o seu projeto GCP
-
-O agente chama o Gemini pelo Vertex AI, com a sua conta do Cloud Shell. Não é preciso chave de API.
-
-```bash
-cat > resumidor/.env <<EOF
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
-GOOGLE_CLOUD_LOCATION=global
-EOF
-```
-
-> `GOOGLE_CLOUD_LOCATION=global` é obrigatório: os modelos Gemini 3.x só existem no endpoint global.
-
-## Passo 3: preencher os TODOs
+## Passo 2: preencher os TODOs
 
 Abra `resumidor/agent.py` no editor do Cloud Shell (botão **Abrir editor**) e preencha:
 
@@ -56,7 +43,7 @@ Abra `resumidor/agent.py` no editor do Cloud Shell (botão **Abrir editor**) e p
 
 Dica para o TODO 3: escreva como se fosse orientar um analista novo da sua equipe. Diga o que ele vai receber, o formato que você quer de volta e o que ele não pode fazer.
 
-## Passo 4: verificar
+## Passo 3: verificar
 
 ```bash
 python ../verificar.py
@@ -68,7 +55,7 @@ O script confere os TODOs e manda o [contrato de exemplo](contrato_exemplo.md) a
 ✓ a resposta cita as páginas 1, 2, 3. Lab 01 concluído!
 ```
 
-## Passo 5: conversar com o agente no navegador
+## Passo 4: conversar com o agente no navegador
 
 ```bash
 adk web --port 8080
@@ -94,12 +81,12 @@ Mude as instruções, salve o arquivo e mande o contrato de novo. O `adk web` re
 
 | O que aparece | O que fazer |
 |---|---|
-| `✗ não achei a pasta resumidor/` | Você não está dentro de `starter/`. Rode `cd ~/auditops-workshop-adk/workshop/labs/01-primeiro-agente/starter`. |
+| `✗ não achei a pasta resumidor/` | Você saiu da pasta do lab. Rode `lab 01`. |
 | `✗ TODO ... pendente` | Falta preencher aquele TODO no `agent.py`. |
-| `404` ou `Publisher Model ... not found` | Confira se o `.env` tem `GOOGLE_CLOUD_LOCATION=global`. |
+| `404` ou `Publisher Model ... not found` | Rode `lab 01` de novo: ele refaz o `.env` com `GOOGLE_CLOUD_LOCATION=global`, o endpoint onde os modelos Gemini 3.x existem. |
 | `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |
 | `429` / `RESOURCE_EXHAUSTED` | Cota momentânea. Espere 1 minuto e tente de novo. |
-| Ainda não funciona | A resposta completa está em `../solucao/resumidor/agent.py`. Rode `cd ../solucao` e siga a partir do passo 2. |
+| Ainda não funciona | A resposta completa está em `../solucao/resumidor/agent.py`. Rode `lab 01 solucao` e siga a partir do passo 3. |
 
 ## Próximo lab
 

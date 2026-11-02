@@ -49,7 +49,7 @@ print(f"✓ ferramenta pronta e entregue ao agente {root_agent.name}")
 
 # 2. Perguntas reais ao Gemini
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
-    falhar("GOOGLE_CLOUD_PROJECT não definido: crie o arquivo assistente/.env (passo 1 do README).")
+    falhar("GOOGLE_CLOUD_PROJECT não definido: rode `lab 03` para criar o .env com o seu projeto GCP.")
 
 
 async def perguntar(pergunta: str) -> tuple[str, list[str]]:

@@ -26,7 +26,7 @@ Uma diferença que vale notar: em produção, o paralelismo do Lab 04 é feito c
 Vá para a raiz do repositório e rode o script de deploy:
 
 ```bash
-cd ~/auditops-workshop-adk
+lab 07
 ./deploy_gcp.sh
 ```
 
