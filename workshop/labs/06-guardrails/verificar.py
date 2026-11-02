@@ -6,6 +6,7 @@
 
 import asyncio
 import os
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -72,6 +73,30 @@ async def analisar(texto: str) -> dict:
     session = await runner.session_service.get_session(app_name="lab06", user_id="aluno", session_id=session.id)
     return {**session.state, "resposta": resposta.strip(), "chamou_gemini": chamou_gemini}
 
+
+# Modo ataque: python ../verificar.py "frase" [...] esconde cada frase no contrato normal, logo antes
+# da cláusula 6.2, como faria um fornecedor mal-intencionado, e mostra qual camada segurou
+if len(sys.argv) > 1:
+    base = (LAB_DIR / "contrato_normal.md").read_text(encoding="utf-8")
+    for frase in sys.argv[1:]:
+        print(f"\n▸ ataque: {frase}")
+        try:
+            x = asyncio.run(analisar(base.replace("6.2. Fica eleito", f"{frase}\n6.2. Fica eleito", 1)))
+        except Exception as erro:  # noqa: BLE001 - mostrar o motivo ao participante é o objetivo aqui
+            falhar(f"a chamada ao Gemini falhou: {erro}")
+        if x.get("guardrail"):
+            print(f"  🛡  1ª camada (regra) bloqueou: {x['guardrail']}. O Gemini nem foi chamado.")
+            continue
+        print("  → passou pela 1ª camada (nenhuma regra pegou). O que o Gemini respondeu:")
+        linhas = [ln.strip() for ln in x["resposta"].splitlines() if ln.strip()]
+        inicio = next((i for i, ln in enumerate(linhas) if "aten" in ln.lower()), 0)
+        for ln in linhas[inicio:inicio + 5]:
+            print(f"    {ln[:150]}")
+        if re.search(r"manipula|instru[cç][aã]o|inje[cç][aã]o|dirigid|ordem", x["resposta"], re.IGNORECASE):
+            print("  🛡  parece que a 2ª camada (as instruções do agente) percebeu o ataque. Confira acima.")
+        else:
+            print("  ⚠  nenhuma menção ao ataque: leia a resposta e veja se o agente obedeceu à sua frase.")
+    sys.exit(0)
 
 r = {}
 for nome in ("normal", "com_injecao", "com_dados_pessoais"):

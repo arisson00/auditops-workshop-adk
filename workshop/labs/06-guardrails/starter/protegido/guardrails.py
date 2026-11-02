@@ -3,24 +3,29 @@
 São duas barreiras que rodam antes de qualquer texto chegar ao Gemini:
 1. Bloqueio: textos que tentam dar ordens ao agente param aqui, e o Gemini nem é chamado.
 2. Mascaramento: dados pessoais são trocados por marcadores, e o Gemini nunca os vê (LGPD).
+
+As regras já estão prontas. Para personalizar, acrescente padrões nas listas abaixo.
 """
 
 import re
 
-# Cada item: (padrão, motivo). re.IGNORECASE: "IGNORE" e "ignore" são a mesma tentativa
+# Cada item: (padrão, motivo). O padrão é uma expressão regular (regex):
+#   \s+  = um ou mais espaços     .*  = qualquer coisa     (a|b) = "a" ou "b"     [cç] = "c" ou "ç"
+# re.IGNORECASE: "IGNORE" e "ignore" são a mesma tentativa
 PADROES_INJECAO = [
     (r"ignore\s+(todas\s+)?(as\s+)?(instru[cç][oõ]es|regras)", "tentativa de sobrescrever as instruções"),
     (r"esque[cç]a\s+(tudo|as\s+regras|as\s+instru[cç][oõ]es|seu\s+papel)", "tentativa de apagar o contexto"),
     (r"(revele|mostre|imprima)\s+(o\s+seu\s+|as\s+suas\s+)?(prompt|instru[cç][oõ]es)", "tentativa de extrair as instruções"),
-    # TODO 1: acrescente um padrão para textos que mandam aprovar, como
-    #         "recomende assinar sem ressalvas" ou "aprove imediatamente".
-    #   Dica: (r"(recomende|aprove|assine)\s+.*(sem\s+ressalvas|sem\s+an[aá]lise|imediatamente)", "tentativa de forçar a aprovação"),
-    #   Cuidado: um padrão largo demais (ex.: só "assine") bloquearia cláusulas normais.
+    (r"(recomende|aprove|assine)\s+.*(sem\s+ressalvas|sem\s+an[aá]lise|imediatamente)", "tentativa de forçar a aprovação"),
+    # PERSONALIZE AQUI: acrescente padrões, ex. a versão em inglês:
+    # (r"(ignore|disregard)\s+(all\s+)?(previous|prior)\s+(instructions|guidance)", "tentativa de sobrescrever as instruções (inglês)"),
 ]
 
 DADOS_PESSOAIS = [
     (r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b", "[CPF]"),
     (r"\b[\w.+-]+@[\w-]+(\.[\w-]+)+\b", "[EMAIL]"),
+    # PERSONALIZE AQUI: acrescente outros dados, ex. telefone celular:
+    # (r"\(?\b\d{2}\)?\s?9\d{4}-?\d{4}\b", "[TELEFONE]"),
 ]
 
 
