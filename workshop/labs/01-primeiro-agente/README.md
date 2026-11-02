@@ -142,7 +142,7 @@ Quer voltar ao original? Rode `git checkout resumidor/agent.py`.
 | `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou a sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |
 | `429` / `RESOURCE_EXHAUSTED` | Cota momentânea. Espere 1 minuto e tente de novo. |
 | A página do `adk web` fica em branco, e o terminal mostra `403 Forbidden` nos arquivos `.js` | Você rodou `adk web` direto. Pare com `Ctrl+C` e use `lab web`, que libera o endereço da Visualização da Web. |
-| `address already in use` ao rodar `lab web` | Já existe um `adk web` aberto em outro terminal. Pare-o com `Ctrl+C` ou feche aquele terminal. |
+| `address already in use` | Um `adk web` antigo ainda está aberto (em outra aba ou pausado com `Ctrl+Z`). Rode `lab web`: ele encerra o antigo sozinho. Se avisar que **outro programa** usa a porta, veja qual com `lsof -i :8080`. |
 
 ## Próximo lab
 

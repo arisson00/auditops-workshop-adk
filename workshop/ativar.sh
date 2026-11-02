@@ -40,6 +40,18 @@ lab() {
     # A Visualização da Web do Cloud Shell abre a página em https://8080-....cloudshell.dev.
     # O adk web só aceita a própria máquina como origem; sem liberar o Cloud Shell, os
     # arquivos .js da interface voltam 403 e a página fica em branco
+    # Um adk web esquecido (outra aba, ou pausado com Ctrl+Z) prende a porta 8080: encerra antes.
+    # O "[b]" faz o padrão casar só com o processo do ADK, nunca com um shell que contenha este texto
+    if pkill -f "[b]in/adk web --port 8080" 2>/dev/null; then
+      # Um processo pausado com Ctrl+Z só recebe o pedido de encerrar depois de retomado
+      pkill -CONT -f "[b]in/adk web --port 8080" 2>/dev/null
+      echo "→ encerrei um adk web que já estava aberto"
+      sleep 2
+    fi
+    if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then
+      echo "✗ outro programa está usando a porta 8080. Veja qual com: lsof -i :8080"
+      return 1
+    fi
     echo "→ abra pela Visualização da Web do Cloud Shell, porta 8080. Para parar: Ctrl+C"
     adk web --port 8080 --allow_origins 'regex:https://.*\.cloudshell\.dev'
     return
