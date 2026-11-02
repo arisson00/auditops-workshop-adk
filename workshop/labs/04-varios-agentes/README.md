@@ -97,7 +97,7 @@ ESPECIALISTAS = [compliance, risco, financeiro]
 
 Salve com `Ctrl+S` e rode `python ../verificar.py`. O que muda:
 
-- a linha do tempo ganha o `financeiro`, terminando junto com os outros especialistas. O tempo total quase não muda, porque eles rodam ao mesmo tempo;
+- a linha do tempo ganha o `financeiro`, terminando junto com os outros especialistas: como eles rodam ao mesmo tempo, um especialista a mais quase não alonga essa fase. Já o parecer fica um pouco mais lento, porque passa a ler mais análises;
 - aparece a **análise do seu especialista**, antes do parecer;
 - o parecer passa a considerar o ponto de vista financeiro. Você não mexeu nas instruções do parecer: ele lê sozinho a análise de cada especialista da lista.
 
