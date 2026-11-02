@@ -28,12 +28,12 @@ Você precisa de um projeto Google Cloud com faturamento ativo. Tudo roda no **C
 ```bash
 gcloud config set project <SEU_PROJECT_ID>
 gcloud services enable aiplatform.googleapis.com
-git clone https://github.com/arisson00/auditops-workshop-adk.git ~/auditops-workshop
-cd ~/auditops-workshop/workshop
+git clone https://github.com/arisson00/auditops-workshop-adk.git
+cd ~/auditops-workshop-adk/workshop
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> Se o Cloud Shell reiniciar, rode de novo `cd ~/auditops-workshop/workshop && source .venv/bin/activate`.
+> Se o Cloud Shell reiniciar, rode de novo `cd ~/auditops-workshop-adk/workshop && source .venv/bin/activate`.
 
 Depois, siga para o [Lab 01](labs/01-primeiro-agente/).

@@ -27,7 +27,8 @@ Um agente que lê documentos de terceiros lê também o que esses terceiros quis
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-cd labs/06-guardrails/starter
+source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+cd ~/auditops-workshop-adk/workshop/labs/06-guardrails/starter
 cat > protegido/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)

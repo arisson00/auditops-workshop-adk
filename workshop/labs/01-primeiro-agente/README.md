@@ -16,10 +16,11 @@
 
 ## Passo 1: entrar na pasta do lab
 
-No Cloud Shell, dentro do repositório:
+No Cloud Shell, ative o ambiente Python e entre na pasta do lab:
 
 ```bash
-cd labs/01-primeiro-agente/starter
+source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+cd ~/auditops-workshop-adk/workshop/labs/01-primeiro-agente/starter
 ```
 
 A pasta tem este formato, que é o que o ADK espera:
@@ -93,7 +94,7 @@ Mude as instruções, salve o arquivo e mande o contrato de novo. O `adk web` re
 
 | O que aparece | O que fazer |
 |---|---|
-| `✗ não achei a pasta resumidor/` | Você não está dentro de `starter/`. Rode `cd labs/01-primeiro-agente/starter`. |
+| `✗ não achei a pasta resumidor/` | Você não está dentro de `starter/`. Rode `cd ~/auditops-workshop-adk/workshop/labs/01-primeiro-agente/starter`. |
 | `✗ TODO ... pendente` | Falta preencher aquele TODO no `agent.py`. |
 | `404` ou `Publisher Model ... not found` | Confira se o `.env` tem `GOOGLE_CLOUD_LOCATION=global`. |
 | `403` / `PERMISSION_DENIED` | A API Vertex AI não está ativa ou sua conta não tem o papel *Vertex AI User*. Rode `gcloud services enable aiplatform.googleapis.com`. |

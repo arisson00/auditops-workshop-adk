@@ -18,7 +18,8 @@ No Lab 01 o agente respondia em texto livre. Texto é ótimo para uma pessoa ler
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-cd labs/02-saida-estruturada/starter
+source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+cd ~/auditops-workshop-adk/workshop/labs/02-saida-estruturada/starter
 cat > extrator/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)

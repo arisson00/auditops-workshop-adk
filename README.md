@@ -1,5 +1,7 @@
 # 🛡️ AuditOps 2.0: Agentic RAG, Rastreamento de Página & Model Cascading no Google ADK
 
+> **Veio para o workshop?** Comece pelo [workshop/README.md](workshop/README.md): 7 labs para construir os agentes passo a passo e publicar o AuditOps no seu próprio projeto GCP.
+
 > **Projeto Google Bootcamp**: Orquestração Multi-Agente com **Google ADK**, **Busca em Banco Vetorial (RAG)** com citação exata de página do contrato, **Agente Assistente de Insights** e **Frontend Moderno**.
 
 ---
@@ -19,8 +21,6 @@
 ---
 
 ## 🚀 Como Executar
-
-> **Workshop:** para construir os agentes passo a passo e publicar o AuditOps no seu próprio projeto GCP, siga o [workshop](workshop/README.md).
 
 ### 1. Abrir o Frontend Moderno e Elegante (Web UI + Chat Insights)
 ```bash

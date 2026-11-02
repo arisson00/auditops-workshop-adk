@@ -28,7 +28,8 @@ A equipe fica assim:
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-cd labs/04-varios-agentes/starter
+source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+cd ~/auditops-workshop-adk/workshop/labs/04-varios-agentes/starter
 cat > auditoria/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)

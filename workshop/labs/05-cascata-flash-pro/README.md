@@ -22,7 +22,8 @@ O Pro raciocina melhor sobre casos difíceis, mas é mais caro e mais lento. Man
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-cd labs/05-cascata-flash-pro/starter
+source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+cd ~/auditops-workshop-adk/workshop/labs/05-cascata-flash-pro/starter
 cat > cascata/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)

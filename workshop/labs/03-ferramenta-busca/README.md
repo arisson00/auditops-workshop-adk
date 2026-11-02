@@ -18,7 +18,8 @@ Nos labs 01 e 02 o contrato inteiro ia junto na mensagem. Isso funciona com 3 pÃ
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-cd labs/03-ferramenta-busca/starter
+source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+cd ~/auditops-workshop-adk/workshop/labs/03-ferramenta-busca/starter
 cat > assistente/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
