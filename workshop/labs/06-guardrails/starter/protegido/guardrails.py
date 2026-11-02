@@ -1,6 +1,6 @@
 """Lab 06: as regras dos guardrails, separadas do agente para serem fáceis de revisar.
 
-São duas barreiras que rodam antes de qualquer texto chegar ao Gemini:
+São duas proteções que agem antes de qualquer texto chegar ao Gemini:
 1. Bloqueio: textos que tentam dar ordens ao agente param aqui, e o Gemini nem é chamado.
 2. Mascaramento: dados pessoais são trocados por marcadores, e o Gemini nunca os vê (LGPD).
 
