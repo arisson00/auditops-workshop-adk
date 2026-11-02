@@ -22,7 +22,7 @@ O Pro raciocina melhor sobre casos difíceis, mas é mais caro e mais lento. Man
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+source ~/auditops-workshop-adk/workshop/ativar.sh
 cd ~/auditops-workshop-adk/workshop/labs/05-cascata-flash-pro/starter
 cat > cascata/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE

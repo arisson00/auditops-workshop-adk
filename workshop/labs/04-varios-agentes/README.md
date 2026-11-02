@@ -28,7 +28,7 @@ A equipe fica assim:
 ## Passo 1: entrar na pasta e configurar o projeto
 
 ```bash
-source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+source ~/auditops-workshop-adk/workshop/ativar.sh
 cd ~/auditops-workshop-adk/workshop/labs/04-varios-agentes/starter
 cat > auditoria/.env <<EOF
 GOOGLE_GENAI_USE_VERTEXAI=TRUE

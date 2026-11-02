@@ -19,7 +19,7 @@
 No Cloud Shell, ative o ambiente Python e entre na pasta do lab:
 
 ```bash
-source ~/auditops-workshop-adk/workshop/.venv/bin/activate
+source ~/auditops-workshop-adk/workshop/ativar.sh
 cd ~/auditops-workshop-adk/workshop/labs/01-primeiro-agente/starter
 ```
 

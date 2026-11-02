@@ -29,11 +29,9 @@ Você precisa de um projeto Google Cloud com faturamento ativo. Tudo roda no **C
 gcloud config set project <SEU_PROJECT_ID>
 gcloud services enable aiplatform.googleapis.com
 git clone https://github.com/arisson00/auditops-workshop-adk.git
-cd ~/auditops-workshop-adk/workshop
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+source ~/auditops-workshop-adk/workshop/ativar.sh
 ```
 
-> Se o Cloud Shell reiniciar, rode de novo `cd ~/auditops-workshop-adk/workshop && source .venv/bin/activate`.
+O `ativar.sh` instala o ADK na primeira vez (1 a 2 minutos) e, nas seguintes, só ativa o ambiente. Cada lab começa com essa mesma linha, então não tem problema se o Cloud Shell reiniciar no meio do caminho.
 
 Depois, siga para o [Lab 01](labs/01-primeiro-agente/).
