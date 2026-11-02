@@ -14,7 +14,7 @@ Neste workshop você constrói, passo a passo, o AuditOps: um sistema de agentes
 | [06. Guardrails](labs/06-guardrails/) | Bloqueio de tentativas de manipular o agente | 10-15 min |
 | [07. Deploy](labs/07-deploy-cloud-run/) | O AuditOps completo publicado no Cloud Run | 15 min |
 
-Os labs 01 e 02 já vêm com o agente pronto, para você testar e personalizar. Os labs 03 a 06 têm uma pasta `starter/` com lacunas marcadas `TODO` para você completar. Todos têm uma pasta `solucao/` e um script `verificar.py` que confere o seu trabalho. O lab 07 publica o AuditOps completo, que está na raiz deste repositório.
+Os labs 01 a 06 já vêm com o código pronto e comentado, na pasta `starter/`. Em cada um você **entende** o código, **testa** com o script `verificar.py` e **personaliza**: muda instruções, acrescenta campos, cria o seu próprio especialista, escreve a sua regra de custo e tenta enganar o agente. A pasta `solucao/` guarda a versão original, para comparar. O lab 07 publica o AuditOps completo, que está na raiz deste repositório.
 
 No total são cerca de 90 minutos de labs.
 
