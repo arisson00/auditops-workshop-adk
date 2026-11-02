@@ -18,6 +18,15 @@ sys.path.insert(0, os.getcwd())
 load_dotenv(Path.cwd() / "protegido" / ".env")
 
 
+# Um único event loop para todas as chamadas ao Gemini. Com um rodar() por chamada, o cliente
+# do Gemini tenta fechar a conexão da chamada anterior num loop já encerrado ("Event loop is closed")
+_LOOP = asyncio.new_event_loop()
+
+
+def rodar(tarefa):
+    return _LOOP.run_until_complete(tarefa)
+
+
 def falhar(mensagem: str) -> None:
     print(f"✗ {mensagem}")
     sys.exit(1)
@@ -81,7 +90,7 @@ if len(sys.argv) > 1:
     for frase in sys.argv[1:]:
         print(f"\n▸ ataque: {frase}")
         try:
-            x = asyncio.run(analisar(base.replace("6.2. Fica eleito", f"{frase}\n6.2. Fica eleito", 1)))
+            x = rodar(analisar(base.replace("6.2. Fica eleito", f"{frase}\n6.2. Fica eleito", 1)))
         except Exception as erro:  # noqa: BLE001 - mostrar o motivo ao participante é o objetivo aqui
             falhar(f"a chamada ao Gemini falhou: {erro}")
         if x.get("guardrail"):
@@ -101,7 +110,7 @@ if len(sys.argv) > 1:
 r = {}
 for nome in ("normal", "com_injecao", "com_dados_pessoais"):
     try:
-        r[nome] = asyncio.run(analisar((LAB_DIR / f"contrato_{nome}.md").read_text(encoding="utf-8")))
+        r[nome] = rodar(analisar((LAB_DIR / f"contrato_{nome}.md").read_text(encoding="utf-8")))
     except Exception as erro:  # noqa: BLE001 - mostrar o motivo ao participante é o objetivo aqui
         falhar(f"a chamada ao Gemini falhou: {erro}")
     x = r[nome]

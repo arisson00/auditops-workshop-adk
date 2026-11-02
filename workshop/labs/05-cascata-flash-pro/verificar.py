@@ -18,6 +18,15 @@ sys.path.insert(0, os.getcwd())
 load_dotenv(Path.cwd() / "cascata" / ".env")
 
 
+# Um único event loop para todas as chamadas ao Gemini. Com um rodar() por chamada, o cliente
+# do Gemini tenta fechar a conexão da chamada anterior num loop já encerrado ("Event loop is closed")
+_LOOP = asyncio.new_event_loop()
+
+
+def rodar(tarefa):
+    return _LOOP.run_until_complete(tarefa)
+
+
 def falhar(mensagem: str) -> None:
     print(f"✗ {mensagem}")
     sys.exit(1)
@@ -97,7 +106,7 @@ resultados = {}
 for nome, arquivo in (("TechNova", "contrato_technova.md"), ("VeloNet", "contrato_velonet.md")):
     print(f"… auditando {nome}")
     try:
-        resultados[nome] = asyncio.run(auditar((LAB_DIR / arquivo).read_text(encoding="utf-8")))
+        resultados[nome] = rodar(auditar((LAB_DIR / arquivo).read_text(encoding="utf-8")))
     except Exception as erro:  # noqa: BLE001 - mostrar o motivo ao participante é o objetivo aqui
         falhar(f"a chamada ao Gemini falhou: {erro}")
 

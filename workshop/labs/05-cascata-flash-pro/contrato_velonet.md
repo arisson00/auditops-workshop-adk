@@ -22,9 +22,11 @@
 ### CLÁUSULA 4 - PRIVACIDADE DE TRÁFEGO, CRIPTOGRAFIA E LGPD
 4.1. Todo o tráfego da malha SD-WAN é criptografado ponta a ponta via túneis IPsec AES-256 gerenciados em território nacional (`southamerica-east1`). A CONTRATADA não realiza inspeção profunda de conteúdo (payload) dos dados trafegados.
 4.2. Qualquer incidente de segurança ou anomalia de roteamento BGP será notificado ao SOC da CONTRATANTE em até **24 (vinte e quatro) horas corridas**, conforme Anexo DPA assinado entre as partes.
+4.3. A CONTRATADA responde solidariamente pelas multas aplicadas pela ANPD que decorram de falha técnica sob sua responsabilidade.
 
 ### CLÁUSULA 5 - RESCISÃO E PENALIDADES PROPORCIONAIS
 5.1. Qualquer das Partes poderá rescindir este instrumento mediante aviso prévio de **30 (trinta) dias**, incidindo multa rescisória máxima limitada a **10% (dez por cento)** do saldo remanescente do primeiro ciclo anual (isenta de multa após o 12º mês de vigência).
+5.2. A CONTRATANTE poderá rescindir imediatamente, por justa causa e sem qualquer ônus, caso a disponibilidade mensal fique abaixo de **98,5%** por 2 (dois) meses consecutivos ou 3 (três) alternados.
 
 --- [Página 3] ---
 

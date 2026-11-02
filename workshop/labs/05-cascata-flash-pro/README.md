@@ -30,7 +30,7 @@ Desta vez são dois contratos:
 | Contrato | Situação |
 |---|---|
 | [contrato_technova.md](contrato_technova.md) | Viola as 4 políticas: dados fora do Brasil, SLA sem crédito, multa de 50%, foro em Delaware |
-| [contrato_velonet.md](contrato_velonet.md) | Cumpre as 4 políticas |
+| [contrato_velonet.md](contrato_velonet.md) | Cumpre as 4 políticas (versão do contrato de exemplo do app, ajustada para não ter nenhuma brecha) |
 
 ## Passo 2: conhecer a cascata
 
