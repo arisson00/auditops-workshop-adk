@@ -30,22 +30,40 @@ except ModuleNotFoundError:
 
 
 # 1. A regra, testada com um estado de mentira (sem gastar chamadas ao Gemini)
-def simular(statuses: list[str]) -> tuple[str, int]:
-    contexto = SimpleNamespace(state={"compliance": {"politicas": [{"status": s} for s in statuses]}})
+POLITICAS = ["POL-LGPD-01", "POL-SLA-02", "POL-FIN-03", "POL-JUR-04"]
+
+
+def simular(reprovadas: list[str]) -> str:
+    politicas = [{"politica": c, "status": "NAO_CONFORME" if c in reprovadas else "CONFORME",
+                  "motivo": "", "pagina": 1} for c in POLITICAS]
+    contexto = SimpleNamespace(state={"compliance": {"politicas": politicas}})
     pedido = SimpleNamespace(model=lab.MODELO_FLASH)
-    lab.escolher_modelo(contexto, pedido)
-    return pedido.model, contexto.state.get("desvios")
+    try:
+        lab.escolher_modelo(contexto, pedido)
+    except Exception as erro:  # noqa: BLE001 - mostrar o motivo ao participante é o objetivo aqui
+        falhar(f"a sua regra deu erro: {type(erro).__name__}: {erro}")
+    return pedido.model
 
 
-if simular(["CONFORME", "NAO_CONFORME"])[1] != 1:
-    falhar("TODO 1 pendente: `desvios` deve ter as políticas com status NAO_CONFORME.")
-if simular(["CONFORME", "NAO_CONFORME"])[0] != lab.MODELO_PRO:
-    falhar("TODO 2 pendente: com desvio, troque llm_request.model para MODELO_PRO.")
-if simular(["CONFORME", "CONFORME"])[0] != lab.MODELO_FLASH:
-    falhar("TODO 2: sem desvio, o modelo deve continuar o Flash.")
 if lab.escolher_modelo not in lab.parecer.canonical_before_model_callbacks:
     falhar("TODO 3 pendente: passe before_model_callback=escolher_modelo para o agente parecer.")
-print("✓ regra testada: com desvio → Pro, sem desvio → Flash")
+CENARIOS = [
+    ("nenhum desvio", []),
+    ("1 desvio (SLA)", ["POL-SLA-02"]),
+    ("1 desvio (jurídico)", ["POL-JUR-04"]),
+    ("2 desvios", ["POL-SLA-02", "POL-FIN-03"]),
+    ("4 desvios", POLITICAS),
+]
+print("A sua regra:")
+escolhas = {}
+for nome, reprovadas in CENARIOS:
+    escolhas[nome] = simular(reprovadas)
+    print(f"  {nome:20} → {escolhas[nome]}")
+if escolhas["nenhum desvio"] != lab.MODELO_FLASH:
+    falhar("contrato sem nenhum desvio foi para o Pro: a cascata não economiza nada assim. Confira o if.")
+if escolhas["4 desvios"] != lab.MODELO_PRO:
+    falhar("contrato com os 4 desvios ficou no Flash: o caso mais arriscado precisa do Pro. Confira o if.")
+print("✓ regra coerente: contrato limpo fica no Flash, o mais arriscado vai para o Pro")
 
 # 2. Dois contratos reais
 if not os.getenv("GOOGLE_CLOUD_PROJECT"):
@@ -90,6 +108,8 @@ for nome, r in resultados.items():
 print("-" * 72)
 for nome, r in resultados.items():
     print(f"{nome}: {r['parecer'].strip().splitlines()[0]}")
+    if r.get("motivo_modelo"):
+        print(f"  motivo registrado: {r['motivo_modelo']}")
 print("-" * 72)
 
 if not resultados["TechNova"]["modelo_real"].startswith(lab.MODELO_PRO):

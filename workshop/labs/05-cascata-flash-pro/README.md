@@ -25,8 +25,6 @@ O Pro raciocina melhor sobre casos difíceis, mas é mais caro e mais lento. Man
 lab 05
 ```
 
-Abra `cascata/agent.py`. Repare que o `compliance` usa **saída estruturada** (Lab 02): cada política volta com `status` igual a `CONFORME` ou `NAO_CONFORME`. É isso que permite escrever a regra em Python. Com texto livre, a regra teria que adivinhar o que o modelo quis dizer.
-
 Desta vez são dois contratos:
 
 | Contrato | Situação |
@@ -34,28 +32,45 @@ Desta vez são dois contratos:
 | [contrato_technova.md](contrato_technova.md) | Viola as 4 políticas: dados fora do Brasil, SLA sem crédito, multa de 50%, foro em Delaware |
 | [contrato_velonet.md](contrato_velonet.md) | Cumpre as 4 políticas |
 
-## Passo 2: escrever a regra
+## Passo 2: conhecer a cascata
 
-Na função `escolher_modelo`:
+```bash
+cloudshell edit cascata/agent.py
+```
 
-1. **TODO 1:** monte a lista `desvios` com as políticas de status `NAO_CONFORME`. A linha pronta está no comentário.
-2. **TODO 2:** se houver desvios, troque o modelo da chamada: `llm_request.model = MODELO_PRO`.
+O agente já vem pronto. Leia de cima para baixo:
 
-Repare no fim da função: ela grava no estado quantos desvios achou e qual modelo escolheu. Em produção, é isso que alimenta a tela de custos e a trilha de auditoria.
+| Parte | O que faz |
+|---|---|
+| `compliance` | Roda no Flash, com **saída estruturada** (Lab 02): cada política volta com `status` igual a `CONFORME` ou `NAO_CONFORME`. É isso que permite escrever a regra em Python; com texto livre, a regra teria que adivinhar o que o modelo quis dizer. |
+| `escolher_modelo()` | A **regra**: conta as políticas reprovadas e, se houver alguma, troca o modelo para o Pro. Marcada com `NOVO NESTE LAB`. |
+| `before_model_callback=escolher_modelo` | Faz a regra rodar logo antes de o parecer chamar o Gemini |
+| `parecer` | Criado com `model=MODELO_FLASH`. O Flash é o padrão, e a regra promove para o Pro quando precisa. |
 
-## Passo 3: ligar a regra ao parecer
+Repare no fim da regra: ela grava no estado quantos desvios achou e qual modelo escolheu. Em produção, é isso que alimenta a tela de custos e a trilha de auditoria.
 
-3. **TODO 3:** no agente `parecer`, adicione `before_model_callback=escolher_modelo`.
+## Passo 3: testar a cascata
 
-Repare que o `parecer` é criado com `model=MODELO_FLASH`. O Flash é o padrão, e o callback promove para o Pro quando precisa.
-
-## Passo 4: verificar
+No terminal, ainda na pasta do lab, rode:
 
 ```bash
 python ../verificar.py
 ```
 
-O script primeiro testa a sua regra **sem chamar o Gemini**, com um estado de mentira. Depois audita os dois contratos e compara:
+> Mudou de pasta ou abriu outro terminal? Rode `lab 05` antes.
+
+O script primeiro mostra o que a sua regra decide em cada cenário, **sem chamar o Gemini**:
+
+```
+A sua regra:
+  nenhum desvio        → gemini-3.8-flash
+  1 desvio (SLA)       → gemini-3.1-pro-preview
+  1 desvio (jurídico)  → gemini-3.1-pro-preview
+  2 desvios            → gemini-3.1-pro-preview
+  4 desvios            → gemini-3.1-pro-preview
+```
+
+Depois audita os dois contratos de verdade (cerca de 1 minuto) e compara:
 
 ```
 Contrato   Desvios  Modelo que respondeu       Tempo  Tokens
@@ -70,11 +85,33 @@ A coluna "Modelo que respondeu" não vem do seu código: é o modelo que o próp
 
 Tempo e tokens são só do parecer. O VeloNet saiu **quase 5 vezes mais rápido** e com menos tokens, cobrados no preço menor do Flash. Para o custo exato de cada modelo, veja a [tabela de preços do Vertex AI](https://cloud.google.com/vertex-ai/generative-ai/pricing).
 
-## Experimente (se sobrar tempo)
+## Personalize a regra (opcional)
 
-- Mude a regra para ir ao Pro só com **2 ou mais** desvios. Faz sentido para a sua empresa?
-- Promova para o Pro só quando a política reprovada for a `POL-JUR-04` (jurídico), mesmo que seja a única.
-- Faça a regra também escrever no estado o **motivo** da escolha, ex.: `"Pro: 4 desvios (POL-LGPD-01, ...)"`. Quem audita o sistema vai agradecer.
+Quando vale pagar pelo Pro? Essa é uma decisão de negócio, e aqui você a escreve em uma linha. Na função `escolher_modelo`, procure `PERSONALIZE AQUI` e troque a condição do `if`:
+
+| Regra | Troque `if desvios:` por |
+|---|---|
+| Pro só com 2 ou mais desvios | `if len(desvios) >= 2:` |
+| Pro só com desvio jurídico | `if any(p["politica"] == "POL-JUR-04" for p in desvios):` |
+| Pro com desvio jurídico ou de dados | `if any(p["politica"] in ("POL-JUR-04", "POL-LGPD-01") for p in desvios):` |
+
+Salve com `Ctrl+S` e rode `python ../verificar.py`. A tabela "A sua regra" mostra na hora o que mudou, antes de qualquer chamada ao Gemini.
+
+Para a trilha de auditoria, registre também o **motivo** da escolha: tire o `#` da linha `# callback_context.state["motivo_modelo"] = ...`, logo abaixo. O `verificar.py` passa a mostrar o motivo de cada contrato:
+
+```
+TechNova: **Recomendação:** NÃO ASSINAR SEM AJUSTES...
+  motivo registrado: 4 desvio(s): POL-LGPD-01, POL-SLA-02, POL-FIN-03, POL-JUR-04
+```
+
+Outros testes:
+
+- Mude uma política no `politicas_compliance.md` (por exemplo, aceite SLA de 98%) e veja o TechNova perder um desvio.
+- Troque o Pro por outro modelo sem mexer no código: `MODELO_PRO=<modelo> python ../verificar.py`.
+
+Uma regra para o `verificar.py` continuar passando: **contrato sem desvio fica no Flash, e contrato com os 4 desvios vai para o Pro.** Qualquer regra no meio do caminho vale.
+
+Quer voltar ao original? Rode `git checkout cascata/`.
 
 ## Como isso funciona no AuditOps de verdade
 
@@ -89,11 +126,15 @@ A tela de **Detalhes técnicos** do AuditOps mostra qual modelo respondeu cada e
 
 | O que aparece | O que fazer |
 |---|---|
-| `✗ TODO ... pendente` | A mensagem diz qual TODO e o que falta. |
+| `lab: command not found` | Prepare o workshop: veja o [README do workshop](../../README.md#antes-de-começar). |
+| `✗ não achei a pasta cascata/` | Você saiu da pasta do lab. Rode `lab 05`. |
+| `a sua regra deu erro: ...` | A condição do `if` tem um erro de digitação. Compare com a tabela de regras acima, ou rode `git checkout cascata/`. |
+| `contrato sem nenhum desvio foi para o Pro` | A regra manda contrato limpo para o Pro. Confira a condição do `if`. |
+| `contrato com os 4 desvios ficou no Flash` | A regra nunca promove o caso mais arriscado. Confira a condição do `if`. |
+| `IndentationError` | O `if` ou a linha abaixo dele ficaram desalinhados. O `if` tem 4 espaços no começo; a linha de dentro, 8. |
 | `o contrato VeloNet ... foi para o Pro` | O compliance foi rigoroso demais nessa execução. Rode de novo. |
 | `404` só no TechNova | O seu projeto não tem acesso ao `gemini-3.1-pro-preview`. Rode com outro modelo: `MODELO_PRO=<modelo> python ../verificar.py`. |
 | `429` | Cota do Pro esgotada por um momento. Espere 1 minuto. |
-| Ainda não funciona | A resposta está em `../solucao/cascata/`. |
 
 ## Próximo lab
 

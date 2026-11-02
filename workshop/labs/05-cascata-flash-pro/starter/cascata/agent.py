@@ -5,7 +5,8 @@
 A escolha do modelo é uma regra de negócio em Python, não uma decisão do modelo: é previsível,
 fácil de auditar e de explicar para a área de Compras.
 
-Preencha os TODOs e rode `python ../verificar.py` a partir de starter/.
+O agente já está pronto. Rode `python ../verificar.py` a partir desta pasta (starter/) para testá-lo.
+Depois, se quiser, mude a regra: veja "PERSONALIZE" na função escolher_modelo.
 """
 
 import os
@@ -48,19 +49,24 @@ uma das 4 políticas abaixo (POL-LGPD-01, POL-SLA-02, POL-FIN-03, POL-JUR-04).
 )
 
 
+# NOVO NESTE LAB: um callback, função que o ADK chama logo antes de cada chamada ao Gemini
 def escolher_modelo(callback_context: CallbackContext, llm_request: LlmRequest) -> None:
     """Roda logo antes de o parecer chamar o Gemini e troca o modelo quando há desvio."""
+    # A avaliação do compliance, gravada no estado pelo output_key (um dicionário, graças ao schema)
     conformidade = callback_context.state.get("compliance") or {}
-    # TODO 1: monte a lista das políticas reprovadas. Cada item de conformidade.get("politicas", [])
-    #         é um dicionário com a chave "status", que vale "CONFORME" ou "NAO_CONFORME".
-    #   Dica: [p for p in conformidade.get("politicas", []) if p["status"] == "NAO_CONFORME"]
-    desvios = []
+    # As políticas reprovadas. Cada item tem "politica" (ex.: POL-JUR-04), "status", "motivo" e "pagina"
+    desvios = [p for p in conformidade.get("politicas", []) if p["status"] == "NAO_CONFORME"]
+    # PERSONALIZE AQUI: troque a condição do if para mudar quando o Pro entra. Exemplos:
+    #   if len(desvios) >= 2:                                      só com 2 ou mais desvios
+    #   if any(p["politica"] == "POL-JUR-04" for p in desvios):    só com desvio jurídico
     if desvios:
-        # TODO 2: troque o modelo desta chamada para o Pro: llm_request.model = MODELO_PRO
-        pass
+        # Troca o modelo só desta chamada: o agente continua sendo criado com o Flash
+        llm_request.model = MODELO_PRO
     # Fica registrado no estado: a interface e os relatórios de custo mostram qual modelo decidiu
     callback_context.state["desvios"] = len(desvios)
     callback_context.state["modelo_parecer"] = llm_request.model
+    # PERSONALIZE: registre também o motivo da escolha (o verificar.py mostra este texto)
+    # callback_context.state["motivo_modelo"] = f"{len(desvios)} desvio(s): " + ", ".join(p["politica"] for p in desvios)
     return None  # None = segue com a chamada; devolver uma resposta pularia o Gemini
 
 
@@ -78,7 +84,8 @@ Você escreve para a diretoria. Com base na avaliação de compliance abaixo, es
 Avaliação de compliance:
 {compliance}
 """,
-    # TODO 3: registre a regra para rodar antes de cada chamada: before_model_callback=escolher_modelo
+    # NOVO NESTE LAB: a regra roda antes de cada chamada do parecer ao Gemini
+    before_model_callback=escolher_modelo,
     output_key="parecer",
 )
 
