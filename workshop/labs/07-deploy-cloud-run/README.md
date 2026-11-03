@@ -23,7 +23,16 @@ Uma diferença que vale notar: em produção, o paralelismo do Lab 04 é feito c
 
 ## Passo 2: publicar
 
-Vá para a raiz do repositório e rode o script de deploy:
+Primeiro, confira o AlloyDB que você disparou na capa do workshop:
+
+```bash
+lab alloydb
+```
+
+- `✓ AlloyDB pronto`: ótimo, o app vai usar o banco.
+- `está sendo criado`: pode publicar assim mesmo. Quando o banco ficar pronto, ele conecta o app sozinho.
+
+Depois, vá para a raiz do repositório e rode o script de deploy:
 
 ```bash
 lab 07
@@ -35,7 +44,7 @@ O script faz cinco etapas, numeradas na tela:
 1. Ativa as APIs (1 a 2 minutos na primeira vez).
 2. Dá as permissões necessárias à conta de serviço.
 3. **Testa se o seu projeto acessa o Flash e o Pro.** Você deve ver `✓ gemini-3.8-flash respondeu` e `✓ gemini-3.1-pro-preview respondeu`.
-4. Procura um AlloyDB no projeto. Se não houver, a busca roda em memória, o que é suficiente para o lab.
+4. Procura o AlloyDB. Se ele estiver pronto, aparece `AlloyDB encontrado em <IP>` e o app passa a guardar os trechos e os vetores no banco. Se não, a busca roda em memória.
 5. Faz o build da imagem e o deploy (3 a 5 minutos).
 
 No fim aparece `✓ AuditOps no ar: https://auditops-executive-....run.app`.
@@ -91,15 +100,9 @@ python workshop/labs/07-deploy-cloud-run/verificar.py
 
 Leia os dois pareceres lado a lado. É exatamente essa decisão de custo × qualidade que a cascata do Lab 05 automatiza. Para voltar, rode `./deploy_gcp.sh` sem a variável.
 
-## Passo 5: apagar tudo (obrigatório)
+## Não apague ainda
 
-O Cloud Run cobra pouco quando ninguém usa, mas não deixe recursos esquecidos:
-
-```bash
-./cleanup_gcp.sh --so-app
-```
-
-O script lista o que vai apagar e pede que você digite o ID do projeto para confirmar. O `--so-app` apaga só o Cloud Run e as imagens. Se você criou um AlloyDB por conta própria (`./setup_alloydb.sh`), rode `./cleanup_gcp.sh` sem a opção, porque o AlloyDB cobra por hora enquanto existir.
+O Lab 08 usa este app e o AlloyDB. A limpeza (`lab limpar`) fica para o fim dele.
 
 ## Travou?
 
@@ -121,8 +124,6 @@ Para ver os logs do serviço:
 gcloud run services logs read auditops-executive --region us-central1 --limit 50
 ```
 
-## Fim
+## Próximo lab
 
-Você construiu um agente, deu a ele saída estruturada, uma ferramenta de busca, colegas especialistas, um roteamento de modelos por custo e proteção contra manipulação. Depois publicou tudo isso como um produto.
-
-O mesmo caminho serve para outros documentos da sua empresa: notas fiscais, apólices, editais, laudos. Troque as instruções, o schema e as políticas, e mantenha a arquitetura.
+No **Lab 08**, você abre o AlloyDB no console e vê, com SQL, os trechos dos contratos, os vetores e a busca por significado que o app usa por baixo.

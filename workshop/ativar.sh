@@ -7,6 +7,8 @@
 #     lab 07            vai para a raiz do repositório (deploy)
 #     lab web           abre a interface do ADK (adk web) para o lab da pasta atual
 #     lab app           abre o AuditOps publicado no Cloud Run (lab 07), mesmo sem acesso público
+#     lab alloydb       cria o AlloyDB em segundo plano (ou confere o que a infra criou); lab alloydb senha
+#     lab limpar        apaga o que o workshop criou no projeto, para não gerar custo
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   echo "Use com source, não com bash:  source ${0}"
@@ -55,7 +57,7 @@ _auditops_preparar_porta() {
 lab() {
   local numero="${1:-}" pasta="${2:-starter}" projeto destino pacote
   if [ -z "$numero" ]; then
-    echo "Uso: lab <número> [solucao]   |   lab web   |   lab app     ex.: lab 01   |   lab 03 solucao"
+    echo "Uso: lab <número> [solucao]  |  lab web  |  lab app  |  lab alloydb  |  lab limpar     ex.: lab 01"
     ls -1 "$AUDITOPS_WORKSHOP/labs"
     return 1
   fi
@@ -74,6 +76,69 @@ lab() {
     # O adk web só aceita a própria máquina como origem; sem liberar o Cloud Shell, os
     # arquivos .js da interface voltam 403 e a página fica em branco
     adk web --port 8080 --allow_origins 'regex:https://.*\.cloudshell\.dev'
+    return
+  fi
+  if [ "$numero" = "alloydb" ]; then
+    local cluster="${ALLOYDB_CLUSTER:-auditops-alloydb-cluster}" instancia="${ALLOYDB_INSTANCE:-auditops-alloydb-primary}"
+    local segredo="${ALLOYDB_SECRET:-auditops-alloydb-password}" regiao="${GOOGLE_CLOUD_LOCATION:-us-central1}" estado
+    local log="$HOME/auditops-alloydb.log" marcador="$HOME/.auditops-alloydb-criado-por-mim"
+    if [ "$pasta" = "senha" ]; then
+      # A senha do usuário postgres, para entrar no AlloyDB Studio (lab 08)
+      gcloud secrets versions access latest --secret "$segredo" && echo
+      return
+    fi
+    if pgrep -f "[s]etup_alloydb.sh" >/dev/null; then
+      echo "→ o AlloyDB está sendo criado (leva de 25 a 35 minutos). Última linha do log:"
+      tail -1 "$log"
+      echo "  Continue com os labs. Para o log completo: tail -f ~/auditops-alloydb.log"
+      return
+    fi
+    estado="$(gcloud alloydb instances describe "$instancia" --cluster "$cluster" --region "$regiao" --format='value(state)' 2>/dev/null)"
+    if [ "$estado" = "READY" ]; then
+      echo "✓ AlloyDB pronto: $cluster / $instancia"
+      if [ -f "$marcador" ]; then
+        echo "  Criado por você neste workshop: ele cobra por hora. No fim, rode lab limpar."
+      else
+        echo "  Ele já existia no projeto (em geral, criado pela infra). O lab limpar não vai apagá-lo."
+      fi
+      return
+    fi
+    if [ -n "$estado" ]; then
+      echo "→ a instância do AlloyDB existe, mas está no estado $estado. Rode lab alloydb de novo em alguns minutos."
+      return
+    fi
+    # Não existe e ninguém está criando: cria em segundo plano. O script retoma de onde parou se for interrompido
+    if ! gcloud alloydb clusters describe "$cluster" --region "$regiao" >/dev/null 2>&1; then
+      touch "$marcador"
+    fi
+    if [ -s "$log" ] && grep -q "ERRO" "$log"; then
+      echo "! a última tentativa terminou com erro:"; grep "ERRO" -A2 "$log" | head -4
+      echo "  Tentando de novo..."
+    fi
+    echo "→ criando o AlloyDB em segundo plano (leva de 25 a 35 minutos)."
+    (cd "$AUDITOPS_WORKSHOP/.." && nohup ./setup_alloydb.sh > "$log" 2>&1 &)
+    echo "  Pode continuar com os labs. Para ver o andamento: lab alloydb"
+    echo "  Se o Cloud Shell fechar, rode lab alloydb de novo: ele continua de onde parou."
+    return
+  fi
+  if [ "$numero" = "limpar" ]; then
+    # Encerra o que estiver rodando no Cloud Shell e apaga o que o workshop criou no projeto.
+    # O AlloyDB só é apagado se foi criado neste workshop (lab alloydb); o da infra fica
+    pkill -f "[b]in/adk web --port 8080" 2>/dev/null
+    pkill -f "[g]cloud.py run services proxy" 2>/dev/null
+    local marcador="$HOME/.auditops-alloydb-criado-por-mim"
+    if pgrep -f "[s]etup_alloydb.sh" >/dev/null; then
+      echo "✗ o AlloyDB ainda está sendo criado. Espere terminar (lab alloydb) e rode lab limpar de novo."
+      return 1
+    fi
+    if [ -f "$marcador" ]; then
+      (cd "$AUDITOPS_WORKSHOP/.." && ./cleanup_gcp.sh) && \
+        ! gcloud alloydb clusters describe "${ALLOYDB_CLUSTER:-auditops-alloydb-cluster}" \
+            --region "${GOOGLE_CLOUD_LOCATION:-us-central1}" >/dev/null 2>&1 && rm -f "$marcador"
+    else
+      echo "→ o AlloyDB não foi criado por você neste workshop: apago só o app e a imagem dele."
+      (cd "$AUDITOPS_WORKSHOP/.." && ./cleanup_gcp.sh --so-app)
+    fi
     return
   fi
   if [ "$numero" = "app" ]; then
@@ -100,6 +165,12 @@ lab() {
     return
   fi
   destino="$(ls -d "$AUDITOPS_WORKSHOP"/labs/"$(printf '%02d' "$((10#$numero))")"-*/"$pasta" 2>/dev/null | head -1)"
+  # Labs de exploração (ex.: 08) não têm starter/: entra na pasta do próprio lab
+  if [ -z "$destino" ] && [ "$pasta" = "starter" ]; then
+    destino="$(ls -d "$AUDITOPS_WORKSHOP"/labs/"$(printf '%02d' "$((10#$numero))")"-*/ 2>/dev/null | head -1)"
+    destino="${destino%/}"
+    [ -n "$destino" ] && pasta=""
+  fi
   if [ -z "$destino" ]; then
     echo "✗ não achei o lab $numero/$pasta. Os labs são:"; ls -1 "$AUDITOPS_WORKSHOP/labs"
     return 1
@@ -115,7 +186,11 @@ lab() {
     [ -f "$pacote/agent.py" ] || continue
     printf 'GOOGLE_GENAI_USE_VERTEXAI=TRUE\nGOOGLE_CLOUD_PROJECT=%s\nGOOGLE_CLOUD_LOCATION=global\n' "$projeto" > "$pacote/.env"
   done
-  echo "✓ $(basename "$(dirname "$destino")")/$pasta   |   projeto: $projeto"
+  if [ -n "$pasta" ]; then
+    echo "✓ $(basename "$(dirname "$destino")")/$pasta   |   projeto: $projeto"
+  else
+    echo "✓ $(basename "$destino")   |   projeto: $projeto"
+  fi
 }
 
 # Nos terminais seguintes (chamado pelo ~/.bashrc), só define o comando `lab`, sem demora

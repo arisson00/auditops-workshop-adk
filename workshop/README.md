@@ -13,10 +13,11 @@ Neste workshop você constrói, passo a passo, o AuditOps: um sistema de agentes
 | [05. Cascata Flash → Pro](labs/05-cascata-flash-pro/) | O modelo Pro só quando há risco | 10-15 min |
 | [06. Guardrails](labs/06-guardrails/) | Bloqueio de tentativas de manipular o agente | 10-15 min |
 | [07. Deploy](labs/07-deploy-cloud-run/) | O AuditOps completo publicado no Cloud Run | 15 min |
+| [08. AlloyDB](labs/08-alloydb/) | O banco vetorial por dentro: trechos, vetores e busca por significado em SQL | 15 min |
 
-Os labs 01 a 06 já vêm com o código pronto e comentado, na pasta `starter/`. Em cada um você **entende** o código, **testa** com o script `verificar.py` e **personaliza**: muda instruções, acrescenta campos, cria o seu próprio especialista, escreve a sua regra de custo e tenta enganar o agente. A pasta `solucao/` guarda a versão original, para comparar. O lab 07 publica o AuditOps completo, que está na raiz deste repositório.
+Os labs 01 a 06 já vêm com o código pronto e comentado, na pasta `starter/`. Em cada um você **entende** o código, **testa** com o script `verificar.py` e **personaliza**: muda instruções, acrescenta campos, cria o seu próprio especialista, escreve a sua regra de custo e tenta enganar o agente. A pasta `solucao/` guarda a versão original, para comparar. O lab 07 publica o AuditOps completo, que está na raiz deste repositório, e o lab 08 abre o banco AlloyDB que ele usa.
 
-No total são cerca de 90 minutos de labs.
+No total são cerca de 1h45 de labs.
 
 ## Antes de começar
 
@@ -45,11 +46,24 @@ A partir daí, cada lab começa com um único comando, que funciona de qualquer 
 | `lab 07` | Vai para a raiz do repositório, para o deploy |
 | `lab web` | Abre a interface do ADK no navegador, para o lab da pasta atual |
 | `lab app` | Abre o AuditOps publicado no lab 07, mesmo quando a organização bloqueia acesso público |
+| `lab alloydb` | Cria o banco AlloyDB em segundo plano, ou confere o que já existe; `lab alloydb senha` mostra a senha |
+| `lab limpar` | Apaga o que o workshop criou no projeto, para não gerar custo |
 
 > **Apareceu `nenhum projeto GCP selecionado`?** Rode `gcloud config set project <SEU_PROJECT_ID>` e repita o `source`. O `<SEU_PROJECT_ID>` é o ID do projeto (ex.: `meu-projeto-123456`), que aparece no seletor do topo do console.
 >
 > **Trocou de projeto ou de conta?** Rode `gcloud config set project <OUTRO_PROJECT_ID>`. O próximo `lab` já usa o projeto novo.
 >
 > **Já tinha clonado antes?** Rode `cd ~/auditops-workshop-adk && git pull && source workshop/ativar.sh`.
+
+3. Dispare a criação do banco **AlloyDB**, que os labs 07 e 08 usam:
+
+```bash
+lab alloydb
+```
+
+Ele leva de 25 a 35 minutos para ficar pronto e roda em segundo plano: pode seguir com os labs enquanto isso. Para ver o andamento, rode `lab alloydb` de novo.
+
+- Se a infra já criou o banco no seu projeto, o comando só confere que ele está pronto.
+- O AlloyDB **cobra por hora enquanto existir**. No fim do workshop, rode `lab limpar`.
 
 Depois, siga para o [Lab 01](labs/01-primeiro-agente/).
