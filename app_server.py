@@ -373,11 +373,16 @@ class AuditOpsRequestHandler(BaseHTTPRequestHandler):
             response_data = {"parsed_document": parsed_doc}
 
             if run_audit_now and extracted_text:
-                report = ORCHESTRATOR.execute_audit(
-                    contract_text=extracted_text,
-                    contract_name=filename,
-                    simulate_if_no_key=True,
-                )
+                try:
+                    report = ORCHESTRATOR.execute_audit(
+                        contract_text=extracted_text,
+                        contract_name=filename,
+                        simulate_if_no_key=True,
+                    )
+                except Exception as e:
+                    # Mesmo tratamento de /api/audit: sem isso a conexão cai e o navegador não recebe JSON
+                    self._send_json({"error": f"Falha na auditoria: {type(e).__name__}: {e}"}, 502)
+                    return
                 remember_report(extracted_text, report)
                 payload = report.model_dump()
                 GLOBAL_VECTOR_ENGINE.alloydb.record_finops_audit(payload)

@@ -12,7 +12,7 @@ COPY tests ./tests
 
 # Instala dependências para modo ADK Live + Conector PostgreSQL/AlloyDB na nuvem
 # Sem `|| true`: se o ADK não instalar, o build deve falhar em vez de publicar uma imagem só-simulação
-RUN pip install --no-cache-dir "pydantic>=2.0" python-dotenv "google-genai>=1.30" "google-adk>=2.13,<3" psycopg2-binary
+RUN pip install --no-cache-dir "pydantic>=2.0" python-dotenv "google-genai>=1.30" "google-adk>=2.13,<3" psycopg2-binary "pypdf>=5,<7"
 
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1

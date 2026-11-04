@@ -132,7 +132,9 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int]:
         except Exception:
             pass
 
-    # 2. Parser nativo em Python puro (suporta streams diretos e FlateDecode por página)
+    # 2. Parser nativo em Python puro (suporta streams diretos e FlateDecode por página).
+    # Só entende PDFs simples, como os gerados por este app: PDFs de Word ou navegador usam fontes com
+    # códigos de glifo e saem ilegíveis daqui. Por isso o resultado passa por `_texto_legivel`.
     pages_extracted: List[str] = []
     for match in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", pdf_bytes, re.DOTALL):
         raw_stream = match.group(1)
@@ -150,7 +152,7 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int]:
             if page_txt and len(page_txt) > 10:
                 pages_extracted.append(page_txt)
 
-    if pages_extracted:
+    if pages_extracted and _texto_legivel("\n".join(pages_extracted)):
         formatted_pages: List[str] = []
         for idx, p_txt in enumerate(pages_extracted, start=1):
             if re.search(r"---\s*\[P.+?gina\s*\d+\]\s*---", p_txt, re.IGNORECASE):
@@ -161,7 +163,20 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int]:
 
     # 3. Fallback caso o PDF contenha texto plano embutido
     fallback_txt = pdf_bytes.decode("utf-8", errors="ignore")
-    return auto_paginate_text(fallback_txt)
+    if _texto_legivel(fallback_txt):
+        return auto_paginate_text(fallback_txt)
+    # Sem texto legível, auditar seria analisar lixo: melhor recusar com uma mensagem clara
+    raise ValueError("não foi possível ler o texto deste PDF (ele pode ter sido digitalizado como imagem)")
+
+
+def _texto_legivel(text: str) -> bool:
+    """Diz se o texto extraído parece texto de verdade, e não códigos de glifo ou bytes binários."""
+    sample = re.sub(r"---\s*\[P.+?gina\s*\d+\]\s*---", "", text or "").strip()[:5000]
+    if len(sample) < 40:
+        return False
+    controles = sum(1 for ch in sample if ord(ch) < 32 and ch not in "\n\r\t")
+    letras = sum(1 for ch in sample if ch.isalpha())
+    return controles / len(sample) < 0.01 and letras / len(sample) > 0.5
 
 
 def extract_text_from_docx_bytes(docx_bytes: bytes) -> Tuple[str, int]:

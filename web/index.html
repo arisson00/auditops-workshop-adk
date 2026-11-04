@@ -828,7 +828,7 @@
       CURRENT_SAMPLE_KEY = key;
       const c = key ? CONTRACTS[key] : null;
       renderContractSelect();
-      document.getElementById('contract-subject').textContent = c ? c.subject : 'Documento enviado';
+      document.getElementById('contract-subject').textContent = c ? c.subject : (UPLOADED?.name || 'Documento enviado');
       const pdf = document.getElementById('file-pdf');
       pdf.classList.toggle('hidden', !c);
       if (c) pdf.href = c.files.pdf;
@@ -1303,6 +1303,13 @@
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
+        // A leitura e a auditoria levam cerca de 1 minuto: mostra a tela de análise em vez de só mudar o botão
+        CURRENT_SAMPLE_KEY = null;
+        document.getElementById('contract-subject').textContent = file.name;
+        document.getElementById('file-pdf').classList.add('hidden');
+        resetChat();
+        switchMainView('contract');
+        setLoading(true);
         const res = await fetch('/api/upload_document', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1317,6 +1324,8 @@
         if (data.audit_report) REPORTS.__upload = data.audit_report;
         openContract('__upload');
       } catch (e) {
+        setLoading(false);
+        switchMainView('home');
         alert(`Não foi possível analisar ${file.name}: ${e.message}. Envie um PDF ou DOCX com texto selecionável (não digitalizado como imagem).`);
       } finally {
         label.textContent = 'Enviar contrato';
