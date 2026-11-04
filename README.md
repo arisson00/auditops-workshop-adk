@@ -1,8 +1,8 @@
 # 🛡️ AuditOps 2.0: Agentic RAG, Rastreamento de Página & Model Cascading no Google ADK
 
-> **Veio para o workshop?** Comece pelo [workshop/README.md](workshop/README.md): 7 labs para construir os agentes passo a passo e publicar o AuditOps no seu próprio projeto GCP.
+> **Veio para o workshop?** Comece pelo [workshop/README.md](workshop/README.md): 8 labs para construir os agentes passo a passo, publicar o AuditOps no seu próprio projeto GCP e explorar o banco vetorial no AlloyDB.
 
-> **Projeto Google Bootcamp**: Orquestração Multi-Agente com **Google ADK**, **Busca em Banco Vetorial (RAG)** com citação exata de página do contrato, **Agente Assistente de Insights** e **Frontend Moderno**.
+> **Projeto Google Bootcamp**: Orquestração Multi-Agente com **Google ADK**, **Busca em Banco Vetorial (RAG)** com citação exata de página do contrato, **Agente Assistente de Insights** e uma tela web para analisar contratos.
 
 ---
 
@@ -22,17 +22,15 @@
 
 ## 🚀 Como Executar
 
-### 1. Abrir o Frontend Moderno e Elegante (Web UI + Chat Insights)
+### 1. Abrir o frontend
 ```bash
 python3 app_server.py
 ```
-Acesse no navegador: **`http://localhost:8080`**
+Depois, abra **`http://localhost:8080`** no navegador.
 
-No Frontend você pode:
-- Alternar entre o **Contrato SaaS Enterprise (Crítico $\rightarrow$ Escala p/ 3.1 Pro)** e o **Contrato Padrão TI (Conforme $\rightarrow$ Resolve no Flash 3.8)**;
-- Clicar nas badges **`📄 Pág. X`** em qualquer achado, redline ou insight para destacar a página correspondente no contrato;
-- Inspecionar os *chunks* do **Banco Vetorial (RAG)** em tempo real;
-- Conversar com o **Agente Assistente de Insights** no painel lateral.
+Na tela inicial, escolha um dos 8 contratos de exemplo ou envie o seu em PDF ou DOCX pelo botão **Enviar contrato**. A análise leva cerca de 1 minuto. Em seguida você vê a recomendação, os riscos com a página de cada um e as sugestões de negociação, e pode fazer perguntas sobre o contrato pelo botão **Perguntar sobre este contrato**.
+
+Sem `GOOGLE_CLOUD_PROJECT` configurado, o app abre em modo demonstração, com análises de exemplo.
 
 ### 2. Executar o Showcase no Terminal (CLI)
 ```bash
