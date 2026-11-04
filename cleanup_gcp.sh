@@ -36,6 +36,7 @@ if [ "$ONLY_APP" = "false" ]; then
   echo "  - segredo                $DB_SECRET"
 fi
 echo "  - imagem do app          $IMAGE (o repositório e as outras imagens ficam)"
+echo "  - processador de OCR     auditops-ocr (Document AI), se existir"
 read -r -p "Digite o ID do projeto para confirmar: " CONFIRM
 if [ "$CONFIRM" != "$PROJECT_ID" ]; then
   echo "Cancelado: nada foi apagado."
@@ -52,5 +53,18 @@ if [ "$ONLY_APP" = "false" ]; then
 fi
 gcloud artifacts docker images delete "$IMAGE" --delete-tags --project "$PROJECT_ID" --quiet \
   && echo "✓ Imagem do app apagada" || echo "- Imagem do app não encontrada"
+
+# Só apaga o processador criado pelo deploy_gcp.sh; um processador da infra tem outro nome e fica
+OCR_API="https://us-documentai.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/processors"
+TOKEN=$(gcloud auth print-access-token 2>/dev/null || true)
+OCR_PROCESSOR=$(curl -s -H "Authorization: Bearer ${TOKEN}" "$OCR_API" | python3 -c \
+  "import json,sys; ps=json.load(sys.stdin).get('processors',[]); print(next((p['name'] for p in ps if p.get('displayName')=='auditops-ocr'),''))" \
+  2>/dev/null || true)
+if [ -n "$OCR_PROCESSOR" ] && curl -sf -X DELETE -H "Authorization: Bearer ${TOKEN}" \
+    "https://us-documentai.googleapis.com/v1/${OCR_PROCESSOR}" >/dev/null; then
+  echo "✓ Processador de OCR apagado"
+else
+  echo "- Processador de OCR não encontrado"
+fi
 
 echo "Limpeza concluída. Confira o faturamento em https://console.cloud.google.com/billing?project=$PROJECT_ID"

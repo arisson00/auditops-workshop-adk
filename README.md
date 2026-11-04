@@ -32,6 +32,8 @@ Na tela inicial, escolha um dos 8 contratos de exemplo ou envie o seu em PDF ou 
 
 Sem `GOOGLE_CLOUD_PROJECT` configurado, o app abre em modo demonstração, com análises de exemplo.
 
+PDFs digitalizados (só imagem, sem texto selecionável) são lidos com o OCR do Document AI quando `DOCUMENT_AI_PROCESSOR` aponta para um processador do tipo OCR. O `deploy_gcp.sh` cria e configura esse processador.
+
 ### 2. Executar o Showcase no Terminal (CLI)
 ```bash
 python3 run_demo.py

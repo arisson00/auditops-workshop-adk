@@ -1326,7 +1326,7 @@
       } catch (e) {
         setLoading(false);
         switchMainView('home');
-        alert(`Não foi possível analisar ${file.name}: ${e.message}. Envie um PDF ou DOCX com texto selecionável (não digitalizado como imagem).`);
+        alert(`Não foi possível analisar ${file.name}: ${e.message}. Confira se o arquivo é um contrato em PDF ou DOCX.`);
       } finally {
         label.textContent = 'Enviar contrato';
         event.target.value = '';

@@ -354,6 +354,28 @@ Cláusula 5.1: Fica eleito o foro de Miami, Flórida (EUA), renunciando ao foro 
         self.assertEqual(dyn_rep.legal_review.overall_risk_level, "CRÍTICO")
         self.assertGreaterEqual(len(dyn_rep.legal_review.high_risk_findings), 4)
 
+    def test_scanned_pdf_uses_document_ai_ocr_or_is_refused(self):
+        """PDF só com imagem: sem processador de OCR é recusado; com ele, o texto vem do Document AI."""
+        from audit_ops import document_parser
+        scanned_pdf = (b"%PDF-1.4\n1 0 obj<</Type/XObject/Subtype/Image>>stream\n"
+                       + bytes(range(256)) * 20 + b"\nendstream\nendobj\n%%EOF")
+        with patch.dict(os.environ, {"DOCUMENT_AI_PROCESSOR": ""}):
+            with self.assertRaises(ValueError):
+                parse_uploaded_document("escaneado.pdf", scanned_pdf)
+        ocr_text = "--- [Página 1] ---\n\nCLÁUSULA 1 - OBJETO. Locação de 40 notebooks pelo prazo de 36 meses."
+        with patch.object(document_parser, "extract_text_with_document_ai", return_value=(ocr_text, 1)) as ocr:
+            parsed = parse_uploaded_document("escaneado.pdf", scanned_pdf)
+        ocr.assert_called_once()
+        self.assertEqual(parsed["extracted_text"], ocr_text)
+        self.assertEqual(parsed["total_pages"], 1)
+
+    def test_pdf_with_text_does_not_call_ocr(self):
+        from audit_ops import document_parser
+        pdf_path = os.path.join(self.base_dir, "samples", "pdf", "contrato_padrao_sla.pdf")
+        with open(pdf_path, "rb") as f, patch.object(document_parser, "extract_text_with_document_ai") as ocr:
+            parse_uploaded_document("contrato_padrao_sla.pdf", f.read())
+        ocr.assert_not_called()
+
     def test_execution_mode_simulated_without_credentials(self):
         rep = self.orchestrator.execute_audit(self.clean_contract, "CloudCore", simulate_if_no_key=True)
         self.assertEqual(rep.execution_mode, "SIMULATED")

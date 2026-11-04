@@ -7,15 +7,18 @@ Suporta:
    nativo de objetos `/Type /Page` e streams `FlateDecode` em Python puro, zero dependências externas).
 3. Geração de arquivos `.pdf` multipágina reais (PDF 1.4 com objetos `/Page` independentes) a partir
    dos contratos da carteira corporativa.
+4. OCR de PDFs digitalizados (sem texto) pelo Document AI, quando `DOCUMENT_AI_PROCESSOR` está definido.
 """
 
 import io
+import os
 import re
 import zlib
 import base64
+import logging
 import zipfile
 import xml.etree.ElementTree as ET
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 
 
 def _decode_pdf_literal_string(raw: str) -> str:
@@ -127,7 +130,7 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int]:
                         pages_out.append(f"--- [Página {idx}] ---\n\n{txt}")
                     else:
                         pages_out.append(txt)
-            if pages_out:
+            if pages_out and _texto_legivel("\n".join(pages_out)):
                 return "\n\n".join(pages_out), len(pages_out)
         except Exception:
             pass
@@ -165,8 +168,55 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> Tuple[str, int]:
     fallback_txt = pdf_bytes.decode("utf-8", errors="ignore")
     if _texto_legivel(fallback_txt):
         return auto_paginate_text(fallback_txt)
+
+    # 4. PDF digitalizado (só imagem): lê com OCR no Document AI, se configurado
+    ocr = extract_text_with_document_ai(pdf_bytes)
+    if ocr:
+        return ocr
     # Sem texto legível, auditar seria analisar lixo: melhor recusar com uma mensagem clara
+    if os.getenv("DOCUMENT_AI_PROCESSOR"):
+        raise ValueError("não foi possível ler o texto deste PDF, nem com OCR")
     raise ValueError("não foi possível ler o texto deste PDF (ele pode ter sido digitalizado como imagem)")
+
+
+def extract_text_with_document_ai(file_bytes: bytes, mime_type: str = "application/pdf") -> Optional[Tuple[str, int]]:
+    """OCR no Document AI para PDFs digitalizados. Devolve None se não houver processador configurado.
+
+    `DOCUMENT_AI_PROCESSOR` é o nome completo de um processador do tipo OCR, ex.:
+    projects/123/locations/us/processors/abc. O processamento online aceita até 15 páginas.
+    """
+    processor = os.getenv("DOCUMENT_AI_PROCESSOR", "").strip()
+    if not processor:
+        return None
+    try:
+        from google.api_core.client_options import ClientOptions
+        from google.cloud import documentai
+
+        location = processor.split("/locations/")[1].split("/")[0]
+        client = documentai.DocumentProcessorServiceClient(
+            client_options=ClientOptions(api_endpoint=f"{location}-documentai.googleapis.com")
+        )
+        result = client.process_document(
+            request=documentai.ProcessRequest(
+                name=processor,
+                raw_document=documentai.RawDocument(content=file_bytes, mime_type=mime_type),
+            )
+        )
+    except Exception as e:
+        logging.getLogger("audit_ops").warning("OCR do Document AI falhou: %s: %s", type(e).__name__, e)
+        return None
+
+    doc = result.document
+    pages: List[str] = []
+    for idx, page in enumerate(doc.pages, start=1):
+        txt = "".join(
+            doc.text[int(seg.start_index):int(seg.end_index)] for seg in page.layout.text_anchor.text_segments
+        ).strip()
+        if txt:
+            pages.append(f"--- [Página {idx}] ---\n\n{txt}")
+    if not pages or not _texto_legivel("\n".join(pages)):
+        return None
+    return "\n\n".join(pages), len(doc.pages)
 
 
 def _texto_legivel(text: str) -> bool:

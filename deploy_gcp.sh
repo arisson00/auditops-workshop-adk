@@ -63,6 +63,7 @@ gcloud services enable \
   aiplatform.googleapis.com \
   secretmanager.googleapis.com \
   storage.googleapis.com \
+  documentai.googleapis.com \
   || echo "   Aviso: não consegui ativar as APIs (sem permissão?). Seguindo: elas devem ter sido ativadas pela infra."
 
 # 3. Permissões da conta de serviço padrão (usada pelo build e pelo Cloud Run)
@@ -138,6 +139,27 @@ else
   ALLOYDB_IP=""
 fi
 
+# Document AI: OCR para contratos em PDF digitalizado (só imagem). Usa DOCUMENT_AI_PROCESSOR se vier
+# da infra; senão procura ou cria o processador "auditops-ocr". Sem ele, PDFs digitalizados são recusados.
+OCR_PROCESSOR="${DOCUMENT_AI_PROCESSOR:-}"
+if [ -z "$OCR_PROCESSOR" ]; then
+  OCR_API="https://us-documentai.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/processors"
+  OCR_PROCESSOR=$(curl -s -H "Authorization: Bearer ${TOKEN}" "$OCR_API" | python3 -c \
+    "import json,sys; ps=json.load(sys.stdin).get('processors',[]); print(next((p['name'] for p in ps if p.get('displayName')=='auditops-ocr'),''))" \
+    2>/dev/null || true)
+  if [ -z "$OCR_PROCESSOR" ]; then
+    OCR_PROCESSOR=$(curl -s -X POST -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" \
+      -d '{"type":"OCR_PROCESSOR","displayName":"auditops-ocr"}' "$OCR_API" \
+      | python3 -c "import json,sys; print(json.load(sys.stdin).get('name',''))" 2>/dev/null || true)
+  fi
+fi
+if [ -n "$OCR_PROCESSOR" ]; then
+  echo "   OCR de PDFs digitalizados: Document AI ($OCR_PROCESSOR)"
+  grant "$COMPUTE_SA" "roles/documentai.apiUser"
+else
+  echo "   Aviso: sem processador do Document AI; PDFs digitalizados (só imagem) serão recusados."
+fi
+
 # 6. Build e deploy. Logo após conceder as permissões o build pode falhar por propagação de IAM:
 #    nesse caso espera 1 minuto e tenta de novo
 echo "-> [5/5] Fazendo build e deploy no Cloud Run (3-5 minutos)..."
@@ -156,7 +178,7 @@ deploy() {
     --service-account "$COMPUTE_SA" \
     --quiet \
     ${EXTRA_FLAGS[@]+"${EXTRA_FLAGS[@]}"} \
-    --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_PROJECT_NUMBER=${PROJECT_NUMBER},GOOGLE_CLOUD_LOCATION=${REGION},GEMINI_LOCATION=global,AUDITOPS_STRICT_LIVE=false,AUDITOPS_MAX_CONCURRENT_AUDITS=3,AUDITOPS_AUDITS_PER_HOUR=20,AUDITOPS_CHATS_PER_HOUR=60,EMBEDDING_MODEL=text-embedding-004,ALLOYDB_CLUSTER=${CLUSTER_ID},ALLOYDB_INSTANCE=${INSTANCE_ID},ALLOYDB_HOST=${ALLOYDB_IP},MODEL_TIER_FAST=${MODEL_FAST},MODEL_TIER_STANDARD=${MODEL_FAST},MODEL_TIER_REASONING=${MODEL_PRO}"
+    --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_PROJECT_NUMBER=${PROJECT_NUMBER},GOOGLE_CLOUD_LOCATION=${REGION},GEMINI_LOCATION=global,AUDITOPS_STRICT_LIVE=false,AUDITOPS_MAX_CONCURRENT_AUDITS=3,AUDITOPS_AUDITS_PER_HOUR=20,AUDITOPS_CHATS_PER_HOUR=60,EMBEDDING_MODEL=text-embedding-004,ALLOYDB_CLUSTER=${CLUSTER_ID},ALLOYDB_INSTANCE=${INSTANCE_ID},ALLOYDB_HOST=${ALLOYDB_IP},MODEL_TIER_FAST=${MODEL_FAST},MODEL_TIER_STANDARD=${MODEL_FAST},MODEL_TIER_REASONING=${MODEL_PRO},DOCUMENT_AI_PROCESSOR=${OCR_PROCESSOR}"
 }
 if ! deploy; then
   echo "   O deploy falhou; esperando 60s (propagação de permissões) e tentando de novo..."
